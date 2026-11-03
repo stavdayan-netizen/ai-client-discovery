@@ -1,0 +1,233 @@
+{
+  "title_pattern": "שאלון איפיון להטמעת AI - {שם העסק}",
+  "intro_text": "לקוח יקר, על מנת שנוכל לדייק את הפתרון הטכנולוגי לצרכים העסקיים שלך ולהבטיח הטמעה חלקה ומוצלחת, אנא הקדש/י מספר דקות למענה על השאלות הבאות.",
+  "definition": {
+    "sections": [
+      {
+        "id": "sec_a",
+        "title": "חלק א': ההקשר העסקי והמטרות",
+        "active": true,
+        "questions": [
+          {
+            "id": "q_01",
+            "type": "long_text",
+            "label": "מהו האתגר המרכזי או נקודת הכאב (Pain Point) שאתם מנסים לפתור באמצעות בינה מלאכותית?",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          },
+          {
+            "id": "q_02",
+            "type": "long_text",
+            "label": "מהי ההשפעה העסקית המצופה מהטמעת הפתרון? (לדוגמה: חיסכון בזמן, הגדלת הכנסות, שיפור שירות)",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          },
+          {
+            "id": "q_03",
+            "type": "long_text",
+            "label": "כיצד נמדוד הצלחה? אילו מדדי ביצוע (KPIs) מרכזיים ישתפרו בעקבות הפרויקט?",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          }
+        ]
+      },
+      {
+        "id": "sec_b",
+        "title": "חלק ב': התהליך הקיים ובעלי העניין (Stakeholders)",
+        "active": true,
+        "questions": [
+          {
+            "id": "q_04",
+            "type": "long_text",
+            "label": "תאר/י בקצרה את התהליך הידני כפי שהוא מתבצע היום ללא AI:",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          },
+          {
+            "id": "q_05",
+            "type": "person_group",
+            "label": "מי הם הגורמים והתפקידים הרלוונטיים המעורבים בתהליך זה כיום?",
+            "required": true,
+            "active": true,
+            "tag": "stakeholders",
+            "config": {
+              "fields": [
+                "name",
+                "role",
+                "responsibility"
+              ],
+              "required_fields": [
+                "name"
+              ],
+              "min": 0,
+              "max": 20
+            }
+          },
+          {
+            "id": "q_06",
+            "type": "person_group",
+            "label": "מי יהיה מנהל הפרויקט / \"הספונסר\" מתוך הארגון? (איש הקשר המרכזי לקבלת החלטות)",
+            "required": true,
+            "active": true,
+            "tag": "sponsor",
+            "config": {
+              "fields": [
+                "name",
+                "role"
+              ],
+              "required_fields": [
+                "name"
+              ],
+              "min": 0,
+              "max": 1
+            }
+          },
+          {
+            "id": "q_07",
+            "type": "long_text",
+            "label": "מי יהיו משתמשי הקצה של המערכת?",
+            "required": true,
+            "active": true,
+            "tag": "end_users",
+            "config": {}
+          }
+        ]
+      },
+      {
+        "id": "sec_c",
+        "title": "חלק ג': נתונים (Data) ותשתיות טכנולוגיות",
+        "active": true,
+        "questions": [
+          {
+            "id": "q_08",
+            "type": "long_text",
+            "label": "היכן נמצא כיום המידע והידע הנדרש לתהליך? (אתר אינטרנט, קובצי PDF, מערכת CRM, וכו')",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          },
+          {
+            "id": "q_09",
+            "type": "long_text",
+            "label": "האם המידע מובנה (טבלאות, מסדי נתונים) או לא מובנה (טקסט חופשי, מסמכים)?",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          },
+          {
+            "id": "q_10",
+            "type": "long_text",
+            "label": "מהי איכות המידע הנוכחי ועד כמה הוא מעודכן?",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          },
+          {
+            "id": "q_11",
+            "type": "long_text",
+            "label": "לאילו מערכות ארגוניות קיימות נצטרך להתממשק? (לדוגמה: Salesforce, Slack, מערכות פנים). האם קיימים API פתוחים?",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          }
+        ]
+      },
+      {
+        "id": "sec_d",
+        "title": "חלק ד': חווית המשתמש וממשק (UI/UX)",
+        "active": true,
+        "questions": [
+          {
+            "id": "q_12",
+            "type": "long_text",
+            "label": "כיצד תרצו שמשתמשי הקצה יתקשרו עם פתרון ה-AI? (למשל: צ'אט ב-WhatsApp, בוט באתר, מערכת פנימית)",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          },
+          {
+            "id": "q_13",
+            "type": "short_text",
+            "label": "באיזו שפה או שפות נדרשת המערכת לתמוך?",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          }
+        ]
+      },
+      {
+        "id": "sec_e",
+        "title": "חלק ה': אבטחת מידע, פרטיות וניהול סיכונים",
+        "active": true,
+        "questions": [
+          {
+            "id": "q_14",
+            "type": "long_text",
+            "label": "האם המערכת תיחשף למידע רגיש, פרטי לקוחות (PII) או סודות מסחריים?",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          },
+          {
+            "id": "q_15",
+            "type": "long_text",
+            "label": "מהי רמת הסובלנות של הארגון לטעויות מערכת (הזיות/Hallucinations)?",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          },
+          {
+            "id": "q_16",
+            "type": "long_text",
+            "label": "האם נדרש גורם אנושי המאשר את הפעולה (Human in the Loop) לפני ביצוע סופי?",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          }
+        ]
+      },
+      {
+        "id": "sec_f",
+        "title": "חלק ו': מסגרת זמן ותקציב",
+        "active": true,
+        "questions": [
+          {
+            "id": "q_17",
+            "type": "date",
+            "label": "האם יש תאריך יעד קשיח להשקת גרסה ראשונית (MVP) או אבן דרך ארגונית?",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          },
+          {
+            "id": "q_18",
+            "type": "long_text",
+            "label": "האם הוגדר תקציב מיועד לשלב ההקמה (CapEx) ולשלב התחזוקה (OpEx)?",
+            "required": true,
+            "active": true,
+            "tag": null,
+            "config": {}
+          }
+        ]
+      }
+    ]
+  }
+}
