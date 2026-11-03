@@ -68,13 +68,14 @@ Key boundaries:
 
 ### 2.1 Repository state and proposed layout
 
-**Current state:** the private GitHub repository `stavdayan-netizen/ai-client-discovery` exists and `main` contains the initial planning commit (`5290bd5`): `SPEC.md`, `practice.md`, `architecture.md`, `CLAUDE.md`, `README.md`, `.gitignore`. The private GitHub Project board (To do / In progress / Done) has been created and linked to the repository. **No Issues exist yet** (they await owner approval, section 14), and no collaborators have been invited. Everything else below is **proposed and not yet created**; each piece is created through its own Issue, branch and Pull Request.
+**Current state:** the private GitHub repository `stavdayan-netizen/ai-client-discovery` exists and `main` contains the initial planning commit (`5290bd5`): `SPEC.md`, `practice.md`, `architecture.md`, `CLAUDE.md`, `README.md`, `.gitignore`. The private GitHub Project board (To do / In progress / Done) has been created and linked to the repository. The nine approved Issues (section 14) exist as GitHub Issues #1 to #9 and are tracked in Project #1. No collaborators have been invited. Documentation and management files (`.env.example`, Issue and PR templates) are added by Issue #1; everything else below is **proposed and not yet created**, and each piece is created through its own Issue, branch and Pull Request.
 
 Proposed layout (files already present are marked):
 
 ```
 SPEC.md  practice.md  architecture.md  README.md  .gitignore  CLAUDE.md   # already on main
-.env.example                                                              # not yet created
+.env.example                                                              # added by Issue #1 (names only)
+.github/ISSUE_TEMPLATE/task.md  .github/pull_request_template.md           # added by Issue #1
 app/
   main.py              # app factory, startup guards, static mounting
   config.py            # env-driven settings
@@ -622,12 +623,12 @@ The work is organized as **exactly nine high-level Issues**, done **one at a tim
 
 **Tests are written with each feature, not postponed.** Every Issue ships its own pytest tests (and a manual four-width responsive check for UI work, as `practice.md` requires). Issue 8 adds the cross-cutting layer: simulated Evals, automated responsive browser checks and the full CI gate, and Issue 9 extends that coverage to the template editor.
 
-**Setup status:** the private repository exists and the planning files are on `main`; the private Project board with To do / In progress / Done columns exists and is linked to the repository. **No Issues have been created yet; this list awaits owner approval.** No collaborators have been invited.
+**Setup status:** the private repository exists and the planning files are on `main`; the private Project board with To do / In progress / Done columns exists and is linked to the repository. The nine Issues below have been created as GitHub Issues #1 to #9 (same numbers as in this list) and are on the board. No collaborators have been invited.
 
 **CI timing (approved):** Issue 2 adds a minimal GitHub Actions workflow (lint + pytest on every Pull Request, no secrets), so every later PR is checked from the start. Issue 8 extends it with the simulated Evals and the browser-based responsive tests. The editable template (Issue 9) is built last and brings its own tests; its flows are added to the Issue 8 browser tests.
 
 ### Issue 1 - Project documentation and management setup
-*Status: partly done (architecture, `CLAUDE.md`, `README.md`, `.gitignore`, repository and Project board exist).*
+*Status: in progress. Done before this Issue: architecture, `CLAUDE.md`, `README.md`, `.gitignore`, repository, Project board. Added by this Issue's Pull Request: README run-instructions placeholder, `.env.example`, Issue and PR templates, phase labels (`phase:design`, `phase:place`, `phase:manage`, `phase:test-eval`). The last criterion (templates used by the following PRs) is confirmed in Issue #2's PR.*
 - **Scope:** finish the documentation and management layer: `README.md` with purpose, the four phases and local-run instructions (placeholders until Issue 2), `.env.example` (variable names only), GitHub Issue template and PR template (objective, scope, "Done when", test plan, automated-versus-manual checklist), phase labels.
 - **Done when:** the templates are used by the Issues and PRs that follow; the README states purpose, the four phases and that deployment is out of scope; no secret or real data is in the repository; the board columns exist (done).
 - **Test plan:** manual: Mermaid diagrams render on GitHub; a fresh read of the README is understandable; the first PR (Issue 2) uses the PR template. No automated tests.

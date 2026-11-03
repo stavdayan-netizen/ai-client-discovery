@@ -23,6 +23,19 @@ The development plan is nine GitHub Issues, done one at a time in order, each wi
 
 Python, FastAPI, SQLite, HTML, CSS and vanilla JavaScript. No Node.js or frontend frameworks. A deterministic mock AI provider is used first; real AI and real-model Evals will be added only after explicit approval.
 
+## Running locally
+
+*Placeholder: the application does not exist yet. These instructions become real when Issue #2 (application skeleton) is merged.*
+
+Planned shape (see `architecture.md`, section 8.1):
+
+1. Install Python 3 (exact version to be pinned in Issue #2).
+2. Create and activate a virtual environment, then install the dependencies: `pip install -r requirements.txt`.
+3. Optionally copy `.env.example` to `.env` (git-ignored; names only, no secrets are needed).
+4. Start the server on localhost only: `uvicorn app.main:app --host 127.0.0.1`.
+
+Nothing is deployed, and no paid service or live AI call is used.
+
 ## Out of scope
 
 **Deployment is out of scope.** The app is designed to run locally only, bound to localhost, with no admin authentication and synthetic data only. Authentication and role-based access are mandatory before any deployment or use with real client data (see `architecture.md`, section 9.3).
@@ -30,3 +43,7 @@ Python, FastAPI, SQLite, HTML, CSS and vanilla JavaScript. No Node.js or fronten
 ## Working on this project
 
 Read `SPEC.md`, `architecture.md` and `practice.md` first. Work proceeds one Issue, one branch, one Pull Request, with owner approval before merging.
+
+- Issues and the board: GitHub Issues #1 to #9 in the private Project "AI Client Discovery" (To do / In progress / Done).
+- New Issues use `.github/ISSUE_TEMPLATE/task.md`; Pull Requests use `.github/pull_request_template.md`.
+- Phase labels: `phase:design`, `phase:place`, `phase:manage`, `phase:test-eval`.
