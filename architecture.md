@@ -66,10 +66,15 @@ Key boundaries:
 - **AI is behind one interface.** Services call the orchestration layer, never a provider directly. Swapping providers is a configuration change plus one new class.
 - **The browser is a client, not a source of truth.** `localStorage` is a recovery aid only.
 
-### 2.1 Proposed repository layout (created only after approval of the setup stage)
+### 2.1 Repository state and proposed layout
+
+**Current state:** the private GitHub repository `stavdayan-netizen/ai-client-discovery` exists and `main` contains the initial planning commit (`5290bd5`): `SPEC.md`, `practice.md`, `architecture.md`, `CLAUDE.md`, `README.md`, `.gitignore`. The private GitHub Project board (To do / In progress / Done) has been created and linked to the repository. **No Issues exist yet** (they await owner approval, section 14), and no collaborators have been invited. Everything else below is **proposed and not yet created**; each piece is created through its own Issue, branch and Pull Request.
+
+Proposed layout (files already present are marked):
 
 ```
-SPEC.md  practice.md  architecture.md  README.md  .gitignore  .env.example
+SPEC.md  practice.md  architecture.md  README.md  .gitignore  CLAUDE.md   # already on main
+.env.example                                                              # not yet created
 app/
   main.py              # app factory, startup guards, static mounting
   config.py            # env-driven settings
@@ -132,13 +137,13 @@ All timestamps are stored as UTC ISO-8601 text and displayed in `Asia/Jerusalem`
 | `lead_status_history` | `lead_id`, `from_status`, `to_status`, `changed_at`, `changed_by`, `reason?`. Append-only. |
 | `template_versions` | `id`, `version_number` (unique), `state` (`draft` / `published`), `intro_text`, `title_pattern`, `definition` (JSON, see 3.3), `created_at`, `published_at?`. Version 1 is seeded from SPEC section 5 and never modified. At most one `draft` row at a time. Published rows are immutable. |
 | `questionnaire_instances` | `id`, `lead_id`, `template_version_id`, `definition_snapshot` (JSON copy), `state` (`active` / `void`), `phase` (`base` / `followups` / `submitted`), `token_hash`, `link_revoked_at?`, `link_expires_at?`, `sent_at?`, `first_opened_at?`, `first_answer_at?`, `last_activity_at?`, `base_completed_at?`, `submitted_at?`, `created_at`. **Partial unique index on `(lead_id) WHERE state = 'active'`** enforces one active questionnaire per lead. |
-| `answers` | `instance_id`, `question_id`, `value` (JSON: string, date string, or list of person objects), `revision` (int), `updated_at`. `UNIQUE(instance_id, question_id)`. One current row per question; the history is the progress timeline, not a keystroke log. |
+| `answers` | `instance_id`, `question_id`, `value` (JSON: string, date string, or list of person objects), `version` (int, server-assigned, +1 per applied write), `last_change_id`, `updated_at`. `UNIQUE(instance_id, question_id)`. One current row per question; the history is the progress timeline, not a keystroke log. |
 | `follow_up_questions` | `id`, `instance_id`, `ai_run_id`, `ordinal`, `text` (Hebrew), `rationale` (internal), `source_question_ids` (JSON), `status` (`pending` / `answered` / `skipped`), `answer_text?`, `answered_at?`. CHECK ordinal between 1 and 5. |
 | `fill_sessions` | `id`, `instance_id`, `started_at`, `last_heartbeat_at`, `ended_at?`, `end_reason` (`explicit_save` / `idle` / `hidden` / `submitted` / `unknown`), `active_seconds`. |
 | `progress_events` | `id`, `instance_id`, `session_id?`, `type` (`opened`, `first_answer`, `progress_changed`, `paused`, `resumed`, `draft_saved`, `base_completed`, `followups_shown`, `submitted`, `link_revoked`, ...), `completion_pct`, `at`, `meta` (JSON). Written only at meaningful milestones (progress crosses a 10-point step, section completed, etc.), never per keystroke. |
 | `contacts` | `id`, `lead_id`, `name`, `role?`, `responsibility?`, `phone?`, `email?`, `origin` (`extracted` / `manual`), `is_sponsor`, `source_instance_id?`, `source_question_id?`, `dedupe_key`, `created_at`, `updated_at`, `removed_at?`. See 5.5. |
 | `internal_notes` | `id`, `lead_id`, `instance_id?`, `question_id?` (null = general lead note), `follow_up_id?`, `author_label`, `body`, `created_at`. **Append-only** in the MVP: no edit, no delete. Many rows per question. |
-| `ai_analysis_runs` | `id`, `instance_id`, `kind` (`follow_ups` / `analysis`), `provider`, `model?`, `is_simulated` (bool), `prompt_version`, `input_hash`, `status` (`pending` / `succeeded` / `failed`), `output` (JSON), `error?`, `created_at`, `completed_at?`. **Partial unique index on `(instance_id, kind) WHERE status IN ('pending','succeeded')`** guarantees at most one live or successful run per kind. |
+| `ai_analysis_runs` | `id`, `instance_id`, `kind` (`follow_ups` / `analysis`), `provider`, `model?`, `is_simulated` (bool), `prompt_version`, `input_hash`, `status` (`pending` / `succeeded` / `failed`), `output` (JSON), `error?` (for example `provider_error`, `invalid_output`, `interrupted`), `created_at`, `lease_expires_at` (set when a `pending` row is created: now + provider timeout + margin, planned 60 s), `completed_at?`. **Partial unique index on `(instance_id, kind) WHERE status IN ('pending','succeeded')`** guarantees at most one live or successful run per kind. **Recovery of interrupted runs:** see 4.3. |
 
 Rules that hold across tables:
 
@@ -218,29 +223,38 @@ sequenceDiagram
   participant DB as SQLite
 
   U->>JS: keystroke
-  JS->>JS: update state, rev++ for that question, indicator = "unsaved"
-  JS->>LS: write draft (state + revisions)
+  JS->>JS: update state, mark question dirty, indicator = "unsaved"
+  JS->>LS: write draft (value, base_version, change_id, dirty)
   Note over JS: no network, no AI per keystroke
   JS->>JS: debounce ~1s of inactivity
-  JS->>API: PUT /api/r/{token}/answers  { changes:[{q, value, rev}] }
+  JS->>API: PUT /api/r/{token}/answers  { changes:[{q, value, base_version, change_id}] }
   Note over JS: indicator = "שומר..."
-  API->>DB: per question: write only if rev > stored rev
-  API-->>JS: { accepted:[q...], stale:[{q, stored_rev}] }
-  JS->>JS: indicator = "נשמר" only when no newer local rev is pending
+  API->>DB: per question, in one transaction: apply only if base_version == stored version
+  API-->>JS: { applied:[{q, version}], conflicts:[{q, server_value, server_version}] }
+  JS->>JS: indicator = "נשמר" only when every dirty question was applied
   alt network error / offline
-    JS->>JS: keep draft, indicator = "לא מסונכרן", retry with backoff and on 'online'
+    JS->>JS: keep draft, indicator = "לא מסונכרן", retry with backoff and on 'online' (same change_id)
+  else conflicts returned
+    JS->>JS: keep local value, indicator = "יש התנגשות", ask the respondent to choose
   end
 ```
 
 **Ordering and conflict rules (documented behavior):**
 
-1. Each question has a **client-side monotonically increasing revision**, persisted in `localStorage` with the draft.
-2. The server applies a change only if `rev` is higher than the stored revision for that question. Older or duplicate writes are acknowledged as `stale` and ignored, so a slow older request can never overwrite a newer edit, and retries are idempotent.
-3. Only one save request is in flight at a time per form; edits during a flight are batched into the next request.
-4. "Saved" is shown only when the server acknowledged **the latest** local revision of every dirty question.
-5. "שמירת טיוטה ויציאה" flushes immediately, waits for the acknowledgment, then leaves.
-6. **Known limitation:** two devices editing the same link simultaneously resolve per question by higher revision (effectively last-writer-wins). The MVP does not merge. This is documented and has a regression test.
-7. On load, the client compares server answers with the local draft: if local has a higher revision for a question, it re-sends it; otherwise server state wins. The draft is removed from `localStorage` after final submission.
+The unit of conflict detection is **one question's answer** (for a contact group, the whole group). The server keeps a **server-assigned `version`** per answer (starts at 0 for "never saved", +1 on every applied write) and the `change_id` of the last applied write. The server never overwrites on a mismatch.
+
+1. Every change the client sends carries `base_version` (the server version the edit was made on top of) and a random `change_id`. Both are kept in the `localStorage` draft until the write is acknowledged.
+2. **Apply rule (server, atomic per question).** In order:
+   1. `change_id` equals the stored `last_change_id`: this exact write was already applied (a retry after a lost response). Return success with the current version. **Idempotent retries.**
+   2. `base_version` equals the stored `version`: apply, increment `version`, store `change_id`. Return the new version.
+   3. `base_version` differs but the submitted value is **identical** to the stored value: two devices converged on equal text. Return success with the current version; no write.
+   4. Otherwise: **conflict.** Nothing is written. Return the server's current value and version.
+3. Only one save request is in flight per form; edits made during a flight are batched into the next request. Within a single device this preserves order, and `base_version` additionally stops a delayed older request from overwriting newer data.
+4. **Conflict resolution UI (no silent loss).** On a conflict the form keeps the respondent's text, marks that question with an inline notice, shows both versions (the respondent's and the saved one), and offers two buttons: keep mine (re-sent with `base_version` set to the server's current version) or keep the saved one (local text is replaced). Until every conflict is resolved the indicator shows "יש התנגשות" and never "נשמר", and "המשך לשליחה" is blocked. The respondent's text stays in the `localStorage` draft until the choice is made, so a refresh does not lose it.
+5. **Picking up the other device's edits.** On load, and whenever the tab becomes visible again, the client fetches the current answers. For a question with no unsent local edits, the server value is adopted silently. For a question with unsent local edits whose `base_version` is older than the server's, the conflict flow in rule 4 is shown instead of overwriting either side.
+6. "Saved" is shown only when the server acknowledged (applied, or equal) the latest local change of every dirty question.
+7. "שמירת טיוטה ויציאה" flushes immediately and waits for the acknowledgment (or shows the conflict notice) before leaving. The draft is removed from `localStorage` after final submission.
+8. **Accepted limitation:** there is no automatic text merge inside one answer, and two devices are not co-edited live. The cost is one explicit choice per conflicting question. Regression tests cover: older request after newer, duplicate/retried request, equal text from two devices, and conflicting text from two devices (neither side is lost).
 
 ### 4.3 Base questionnaire to follow-ups to final submission
 
@@ -253,9 +267,9 @@ sequenceDiagram
   participant DB as SQLite
 
   Lead->>API: POST /continue  (המשך לשליחה)
-  API->>DB: flush answers; validate required; phase = followups; base_completed_at
+  API->>DB: flush answers; validate ALL required answered (optional may be empty); phase = followups; base_completed_at
   API->>ORC: generate_follow_ups(instance)
-  ORC->>DB: insert run(kind follow_ups, pending) - unique index blocks duplicates
+  ORC->>DB: sweep expired pending runs; insert run(kind follow_ups, pending, lease) only if none exists for this kind
   ORC->>P: structured input (answers only)
   alt success
     P-->>ORC: 0-5 questions + rationale + source IDs
@@ -268,13 +282,12 @@ sequenceDiagram
   API-->>Lead: follow-ups (text only; rationale and source IDs stripped)
   Lead->>API: answer or skip each (optional)
   Lead->>API: POST /submit  (שליחה סופית)
-  API->>DB: single transaction: phase = submitted, submitted_at, status = התקבל, event
+  API->>DB: single transaction: phase = submitted, submitted_at, status = התקבל, event, INSERT analysis run (pending, lease)
   API-->>Lead: confirmation; form is now read-only
-  API->>ORC: trigger analysis ONCE (background task)
-  ORC->>DB: insert run(kind analysis, pending) or no-op if one exists
+  API->>ORC: start the already-created analysis run (background task)
   ORC->>P: analyze(submitted answers + follow-up answers)
   P-->>ORC: structured analysis
-  ORC->>DB: run succeeded, output stored
+  ORC->>DB: UPDATE run SET succeeded, output WHERE id = ? AND status = 'pending'
 ```
 
 Properties:
@@ -282,8 +295,13 @@ Properties:
 - **Idempotent submit.** The submit transaction checks `phase` first; a double click or retried request returns the existing result and creates nothing new. Same for `/continue` (the unique run index prevents a second follow-up run).
 - **Follow-up generation is synchronous** with a short timeout (the mock returns instantly; a future real provider must meet the same budget or the failure path applies). Follow-ups are generated **once per instance**; going back to edit and continuing again reuses the stored run unless the admin voids and recreates the instance. *(Decision D-9.)*
 - **Original progress never decreases**: follow-up answers are tracked separately (asked / answered / skipped) and excluded from the base completion percentage.
-- **Analysis runs once, automatically, after submit.** Opening the analysis tab only reads `ai_analysis_runs.output`. If the run is `failed`, the admin sees "analysis unavailable" with an **explicit "retry" button**, which creates a new run row after confirmation. No other path calls the provider. *(Decision D-10.)*
+- **Analysis runs once, automatically, after submit.** The `pending` analysis run is created **inside the submit transaction**, so a crash right after submission cannot leave a submitted questionnaire with no run record. Opening the analysis tab only reads `ai_analysis_runs.output`. If the latest run is `failed`, the admin sees "analysis unavailable" with an **explicit "retry" button**, which creates a new run row after confirmation. The button is not shown while a run is `pending` or `succeeded`. No other path calls the provider. *(Decision D-10.)*
 - The analysis run state (`pending` / `succeeded` / `failed`) is shown in the admin UI, together with a visible **"simulated"** badge when `is_simulated` is true.
+- **Recovery of runs stuck in `pending` (server stopped or crashed mid-run).** Every `pending` row has a `lease_expires_at`. A single **sweep** statement marks as `failed` (with `error = 'interrupted'`) every row where `status = 'pending' AND lease_expires_at < now`. The sweep runs (a) at application startup, (b) before the admin analysis tab or run status is read, and (c) before the orchestration layer decides whether to create a run. There is no background scheduler and no automatic re-run.
+  - **Idempotency is preserved.** A swept run becomes `failed`, so it leaves the partial unique index, but new runs are created only by two code paths: the initial run (follow-ups: at `/continue`, only if **no** run of that kind exists at all; analysis: inside the submit transaction) and the admin retry (analysis only, only when the latest run is `failed`). A sweep therefore never causes a duplicate on its own.
+  - **A late provider result cannot resurrect or duplicate a run.** Results are stored with `UPDATE ... WHERE id = ? AND status = 'pending'`; if the row was already swept to `failed`, zero rows change and the late result is discarded.
+  - **Admin retry stays "after failure only".** An interrupted analysis is shown as failed ("interrupted") and gets the retry button; a run that is still within its lease shows as running, with no retry button.
+  - **Follow-ups:** an interrupted follow-up run is swept to `failed` the next time the respondent loads or continues; the respondent proceeds with zero follow-up questions (the existing no-block rule). Follow-ups are not retried automatically or by the admin.
 
 ### 4.4 Activity, sessions and active time
 
@@ -294,12 +312,20 @@ Properties:
 
 ### 4.5 Progress percentage
 
-`completion_pct = answered_active_questions / total_active_questions`, using the instance's **frozen snapshot** (never the live master template).
+`completion_pct = answered_required_questions / total_required_questions` over **active** questions, using the instance's **frozen snapshot** (never the live master template).
 
 - A `long_text`, `short_text` or `date` question counts as answered when its trimmed value is non-empty.
 - A `person_group` question counts as answered when at least one row has all of that group's `required_fields` filled. One question counts once regardless of the number of rows.
-- Optional and required questions both count in the denominator (decision D-8, replacing the undefined "applicable" wording in SPEC section 3).
-- The respondent sees a simple progress bar; the admin sees the percentage and the completed sections.
+- **Optional questions are not part of the percentage** (decision D-8, revised). They are reported separately as "optional answered / optional total" (for example, "3 of 7 optional answered"). Answering or leaving optional questions empty never raises or lowers the percentage.
+- A template version must contain at least one active required question to be published (so the denominator is never zero).
+- The respondent sees a progress bar for required questions plus the separate optional counter; the admin sees the percentage, the completed sections (a section counts as complete when all its required questions are answered) and the optional counter.
+
+**What 100% means (and does not mean).** 100% means every active **required** question of the base questionnaire has been answered. This is **questionnaire completion** (the base questionnaire is ready to continue), and it is the condition for "המשך לשליחה": the respondent may continue when, and only when, all required questions are answered, even if optional questions remain empty. `base_completed_at` is set by that action, not by merely reaching 100%. Completion is **not submission**: at 100% the lead is still in `ממתין למילוי`, `submitted_at` is empty and the form is still editable. Only a successful final submission ("שליחה סופית") sets `submitted_at`, changes the status to `התקבל` and shows "נשלח". Follow-up questions never change the percentage.
+
+Planned respondent UI reflecting this:
+- The progress bar is labelled as required-question fill progress ("מילוי השאלון"), with a separate line for unanswered optional questions (for example "נשארו 4 שאלות רשות - אפשר להמשיך גם בלעדיהן"), and a separate **three-step indicator** showing the stage: מילוי השאלון, שאלות המשך, שליחה סופית. At 100% the bar does not say "נשלח" or "הושלם"; it shows a plain message that the required questions are complete and the questionnaire **has not been sent yet**, and the "המשך לשליחה" button becomes enabled and emphasized. Below 100% the button is disabled and a message lists which required questions remain.
+- The text "נשלח" appears only after final submission succeeds and the form turns read-only.
+- Admin dashboard and lead detail show the percentage together with the stage (filling, follow-ups, submitted), the optional counter, and the submission date only from `submitted_at`, so "100%" is never read as "received". Status `התקבל` is set only by final submission.
 
 ### 4.6 Contacts extraction
 
@@ -315,7 +341,7 @@ On final submission, a service reads the snapshot for questions tagged `stakehol
 
 - The admin edits a single `draft` row: add/remove/edit/reorder sections and questions, change type, required flag, tag, and person-group fields. Reorder uses **up/down buttons** (works on touch and keyboard; no drag-and-drop dependency).
 - **Preview** renders the draft through the same respondent renderer in a read-only mode.
-- **Publish** validates (unique tags, at least one active question, stable IDs intact, no type change on a question ID that already has answers in any instance) and writes a new immutable `version_number`. Existing instances keep their snapshots; only new instances use the new version.
+- **Publish** validates (unique tags, at least one active **required** question, stable IDs intact, no type change on a question ID that already has answers in any instance) and writes a new immutable `version_number`. Existing instances keep their snapshots; only new instances use the new version.
 - Version 1 is the seeded original and cannot be modified.
 
 ### 4.8 Status model
@@ -334,7 +360,7 @@ Respondent (`/api/r/{token}`; token resolved by hash; unknown, revoked or expire
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/` | Heading, intro, questions, own answers, phase, follow-ups (allow-listed fields) |
-| PUT | `/answers` | Batched autosave with revisions |
+| PUT | `/answers` | Batched autosave with `base_version` / `change_id`; returns applied and conflicts (4.2) |
 | POST | `/activity` | Heartbeat / session events |
 | POST | `/save-draft` | Flush and close session |
 | POST | `/continue` | Validate, generate follow-ups |
@@ -467,7 +493,7 @@ Planning only. Nothing here is purchased, provisioned or deployed. Prices are in
 5. **Token shown once.** A lost link requires revoke and regenerate.
 6. **Browser storage** is not encrypted and is shared by anyone using the same browser profile.
 7. **SQLite file is unencrypted**, with no backup, no audit trail beyond the history tables.
-8. **Two-device concurrent editing** is last-higher-revision-wins per question (4.2).
+8. **Two-device concurrent editing** never overwrites silently: a conflicting write is rejected and the respondent chooses which version to keep per question; there is no automatic text merge (4.2).
 9. The mock AI does no real language understanding; it will miss gaps and cannot judge answer quality.
 
 ### 9.3 Mandatory before any public deployment or real client data
@@ -491,9 +517,9 @@ These are requirements, not suggestions. The system must **not** be exposed beyo
 
 | Layer | Tooling | What it proves |
 |---|---|---|
-| Unit | pytest | Progress %, dedupe keys, status transitions, template validation, revision ordering, active-time calculation |
+| Unit | pytest | Progress %, dedupe keys, status transitions, template validation, answer version/conflict rules, pending-run sweep, active-time calculation |
 | API / integration | pytest + FastAPI TestClient on a temp SQLite | Snapshot immutability, one-active-instance rule, read-only after submit, idempotent submit and AI runs, note visibility (respondent never sees internal data), revoked-link behavior |
-| Regression (named in practice.md) | pytest | Save races (older revision cannot overwrite newer), duplicate submit, duplicate AI run, offline retry behavior |
+| Regression (named in practice.md) | pytest | Save races (a delayed older write cannot overwrite newer data), two-device equal and conflicting edits (no silent loss), retried write is idempotent, duplicate submit, duplicate AI run, interrupted `pending` run swept to `failed` without a duplicate or auto re-run, late provider result discarded, offline retry behavior |
 | Responsive smoke | Playwright (Python) | Respondent and admin flows at 320, 375, 768 and 1280px: no horizontal overflow, key controls visible, touch target sizes, RTL direction, save indicator states |
 | Manual | Checklist in the PR | Real touch behavior, long Hebrew text, focus order; reported separately from automated results |
 
@@ -541,8 +567,8 @@ The requirements in SPEC.md and the owner's decisions all remain in force. This 
 | D-4 | Fixed demo author on notes/history; `author_label` column | Users table now | Owner decision. Keeps schema forward-compatible with real users. |
 | D-5 | Respondent link = random token, hash stored, shown once, revocable, optional expiry | Store raw token; short codes | A DB leak does not reveal usable links. Cost: lost link needs regeneration. |
 | D-6 | Separate respondent and admin API surfaces with allow-listed response schemas | One API with role filtering | Makes "lead can never see notes/AI" structural and testable. |
-| D-7 | Per-question client revisions; server applies only higher revisions; batched debounced saves | Last-request-wins; full-form PUT | Prevents slow older requests from overwriting newer edits; idempotent retries. Cost: limited multi-device merge (documented). |
-| D-8 | Completion % = answered active questions / total active questions in the frozen snapshot; person group counts once | Weighted by required only | Resolves the undefined "applicable" wording. Simple and explainable. |
+| D-7 | Server-assigned per-answer `version`; client sends `base_version` + `change_id`; mismatching writes are rejected as conflicts and resolved by the respondent; batched debounced saves | Client-side revision counters with last-writer-wins (earlier draft); full-form PUT | Refined after review. Prevents delayed or concurrent writes from silently overwriting data, makes retries idempotent, and handles equal text from two devices. Cost: one explicit choice per conflicting question, no automatic merge. |
+| D-8 | Completion % = answered **required** active questions / total required active questions in the frozen snapshot; person group counts once; unanswered optional questions are shown separately and do not change the percentage; a published template needs at least one required question | Count all questions (earlier draft) | **Revised by owner.** Resolves the undefined "applicable" wording and matches the continue rule: 100% is reachable and meaningful even when optional questions are skipped. |
 | D-9 | Follow-ups generated once per instance, synchronously with timeout; failure does not block | Regenerate on each continue | Cost control and determinism; owner decision 8 plus SPEC section 7. |
 | D-10 | Analysis auto-triggered once after final submission as a background task; stored; viewing never calls the provider; explicit admin retry allowed only when the run `failed` | Generate on admin open; allow free regeneration | **Confirmed by owner.** Avoids a permanent "unavailable" state; the retry button is hidden unless the latest run is `failed`, and the unique index still blocks a second live or successful run. |
 | D-11 | `ai_analysis_runs.is_simulated` + UI label + eval report header; runner refuses to mislabel | Convention only | Owner decision 7: simulated output can never pass as real evaluation. |
@@ -555,6 +581,8 @@ The requirements in SPEC.md and the owner's decisions all remain in force. This 
 | D-18 | Notes are append-only, no edit/delete in MVP | Editable notes | SPEC requires preserving old notes; simplest defensible rule. |
 | D-19 | Native `<input type="date">` for the calendar picker | Custom date picker library | Free, accessible, localized, no dependency; styling differs by browser (accepted). |
 | D-20 | Responsive tests via Playwright emulation, clearly reported as emulation | Physical device testing | Keeps CI free and reproducible; manual touch review is a PR checklist item. |
+| D-21 | `pending` AI runs carry a `lease_expires_at`; a sweep at startup and before run reads/creation marks expired ones `failed` (`interrupted`); the analysis `pending` row is created inside the submit transaction; late results are discarded by a conditional update | Background scheduler; automatic re-run; leaving runs `pending` forever | Fixes the stuck-`pending` state after a crash without a scheduler, keeps the one-run guarantee (D-16), and keeps retry admin-only and after-failure-only (D-10). Cost: an interrupted run needs a manual admin retry. |
+| D-22 | 100% = all required base questions answered, which enables "המשך לשליחה"; completion is separate from submission. Only a successful final submission sets `submitted_at`, status `התקבל` and the "נשלח" text. Respondent UI shows a three-step stage indicator and "not sent yet" wording; `base_completed_at` is set by "המשך לשליחה" | Treat 100% as complete/received | **Confirmed by owner.** Prevents a lead believing they have sent the questionnaire; keeps `התקבל` tied only to final submission (D-8, SPEC section 3). |
 
 ---
 
@@ -566,20 +594,25 @@ Remaining, none blocking the documentation stage:
 1. Verify GitHub plan limits (private-repo Actions minutes, branch protection / required checks) before relying on them; fallback is documented in 8.4.
 2. Instructor access: a collaborator invite later; nothing is shared or pushed until the setup stage is approved.
 3. Real AI provider, model, budget and real-model Evals: deferred until separately and explicitly approved.
+4. Which of the 18 original questions are **required** in template v1 (SPEC does not say). Because completion is now based on required questions only, this must be decided before the seed issue (Issue 8). Until decided, the working assumption is that no wording changes and a conservative minimum is required (to be proposed with that Issue).
+
+Approved on review: two-device autosave conflict handling (4.2), interrupted AI-run recovery (4.3), and the progress and submission semantics (4.5). GitHub Project #1 (private) exists and is linked to the repository; no Issues have been created.
 
 ---
 
 ## 14. Proposed milestones and first GitHub Issues
 
-Milestones map to the four lesson phases and to SPEC section 12 slices. Each issue is small, has "Done when" criteria, and gets its own branch and PR. **Nothing below is created on GitHub until you approve the setup stage.**
+Milestones map to the four lesson phases and to SPEC section 12 slices. Each issue is small, has "Done when" criteria, and gets its own branch and PR.
+
+**Setup status:** the private repository exists and the initial planning files are committed to `main` (commit `5290bd5`); the private Project board with To do / In progress / Done columns exists and is linked to the repository. **No Issues have been created yet; the list below awaits owner approval.** No collaborators have been invited.
 
 ### Milestone M0 - Design and Place (docs)
-1. **Add architecture.md** (this document, reviewed) - Done when: owner approves; diagrams render on GitHub.
-2. **Add README with local run instructions, `.gitignore`, `.env.example`** - Done when: a fresh clone can follow the README (no code yet beyond placeholders).
+1. **Add architecture.md** (this document, reviewed) - Done when: owner approves; diagrams render on GitHub. *Status: committed to `main` in the initial planning commit; later corrections go through an Issue and PR.*
+2. **Add README with local run instructions, `.gitignore`, `.env.example`** - Done when: a fresh clone can follow the README (no code yet beyond placeholders). *Status: `README.md` and `.gitignore` are on `main`; `.env.example` and the local run instructions remain.*
 
 ### Milestone M1 - Manage setup
-3. **Repository hygiene: issue templates, PR template, labels per phase, Project board columns (To do / In progress / Done)** - Done when: a sample issue and PR use the templates.
-4. **Add minimal `CLAUDE.md` pointer to SPEC.md, practice.md, architecture.md** (needs approval) - Done when: file contains pointers only.
+3. **Repository hygiene: issue templates, PR template, labels per phase** - Done when: a sample issue and PR use the templates. *Status: the Project board and its columns already exist; templates and labels remain.*
+4. **Add minimal `CLAUDE.md` pointer to SPEC.md, practice.md, architecture.md** - Done when: file contains pointers only. *Status: already on `main`.*
 
 ### Milestone M2 - Walking skeleton and Test/Eval foundation
 5. **App skeleton: FastAPI app factory, localhost guard, Host allow-list, health route, static shell, config, bundled Heebo font with license** - Done when: server refuses a non-loopback host; test proves it; Hebrew text renders in the bundled font with no external requests.
@@ -593,7 +626,7 @@ Milestones map to the four lesson phases and to SPEC section 12 slices. Each iss
 
 ### Milestone M4 - Respondent form
 11. **Respondent form renderer for all field types, Hebrew RTL, mobile-first, person-group cards** - Done when: renders at 320/375/768/1280 without horizontal scroll.
-12. **Autosave state machine (revisions, debounce, local draft, indicator, offline retry), save draft and resume** - Done when: race, offline and refresh regression tests pass.
+12. **Autosave state machine (versions and conflict handling, debounce, local draft, indicator, offline retry), save draft and resume** - Done when: race, two-device conflict, offline and refresh regression tests pass.
 13. **Progress percentage and respondent progress bar** - Done when: unit tests cover all field types.
 
 ### Milestone M5 - AI and submission (the minimum demonstrable slice completes here)
