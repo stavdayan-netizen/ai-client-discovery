@@ -11,11 +11,13 @@ This is a learning project for the AiDO Lesson 9 assignment. All data in it is s
 | **Design** | What we build and why | `SPEC.md`, `architecture.md` |
 | **Place** | Where components run, limits, secrets, cost assumptions (plan only) | `architecture.md` (section 8) |
 | **Manage** | GitHub repo, Project board, small Issues, a branch and PR per Issue | `practice.md`, GitHub Issues and Project |
-| **Test/Eval** | Automated tests, simulated AI Evals, responsive checks, CI | `tests/`, `evals/`, `.github/workflows/ci.yml` (added in later milestones) |
+| **Test/Eval** | Automated tests, simulated AI Evals, responsive checks, CI | `tests/`, `evals/`, `.github/workflows/ci.yml` (added in later Issues) |
 
 ## Status
 
 Planning and setup stage. No application code yet. Architecture is approved for the local assignment MVP.
+
+The development plan is nine GitHub Issues, done one at a time in order, each with its own branch and Pull Request (see `architecture.md`, section 14): documentation and setup; skeleton, database and questionnaire seed; admin dashboard, leads and links; respondent UI; autosave and progress tracking; mock AI follow-ups, submission and analysis; admin results, contacts and notes; automated tests, simulated Evals, responsive checks and CI; editable questionnaire template.
 
 ## Planned stack
 

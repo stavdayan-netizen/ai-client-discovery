@@ -559,15 +559,15 @@ Tests use **fixed fictional fixtures** and the MockProvider only. They need no n
 
 The requirements in SPEC.md and the owner's decisions all remain in force. This section defines the **smallest slice that demonstrates all four lesson phases with real, working software**, and the order in which the rest follows.
 
-**Minimum demonstrable slice (Milestones M0 to M5):**
+**How the nine Issues (section 14) demonstrate the four phases:**
 
 - **Design:** this file and SPEC.md, merged through a PR.
 - **Place:** section 8 of this file, merged, plus the working localhost setup with its guards.
-- **Manage:** private repo, Project board, small Issues with acceptance criteria, branch and PR per issue, PR template, `CLAUDE.md` pointer (after approval).
-- **Test/Eval:** pytest suite and CI green, simulated eval cases and report, responsive smoke at 4 widths.
+- **Manage:** private repo, Project board, nine Issues with acceptance criteria, one branch and one PR per Issue, PR template, `CLAUDE.md` pointer (Issue 1 and every PR).
+- **Test/Eval:** tests written with every Issue, CI green on each PR, simulated Evals and automated responsive checks at 4 widths (Issue 8).
 - **Working product path:** create a lead, snapshot the v1 questionnaire, share a link, fill with autosave, resume, continue, get mock follow-ups, final submit, read-only, automatic one-time mock analysis visible to the admin with the "simulated" label, per-answer notes.
 
-**Follow-on slices (all in scope, built after the minimum slice is solid):** full session/active-time timeline UI, contacts extraction and management, status history UI polish, link revoke/regenerate UI, and the **full template editor** (add/remove/edit/reorder, publish, preview). The editor is last because it is the largest and riskiest piece and nothing else depends on it (v1 is seeded). The owner has confirmed that all approved product features, including the editable template, remain in scope. Automated tests, simulated Evals and responsive checks are part of the assignment milestones (M2 CI foundation, M6 Evals and responsive gate), and each later feature issue adds its own tests. Any descoping would be an explicit owner decision recorded in the decision log, never silent.
+**Order and scope:** all nine Issues and all approved product features are in scope, and Issues are done one at a time in the order given. The Test/Eval Issue (8) comes before the template editor (9), so the assignment's test and Eval evidence is in place before the largest and riskiest feature; nothing else depends on the editor. The change of order removes no functionality. Any further change of order or descoping is an explicit owner decision recorded in the decision log, never silent. Tests ship with each Issue; Issue 8 adds the Evals, browser checks and the full CI gate, and Issue 9 extends them to the editor.
 
 ---
 
@@ -616,54 +616,70 @@ Approved on review: two-device autosave conflict handling (4.2), interrupted AI-
 
 ---
 
-## 14. Proposed milestones and first GitHub Issues
+## 14. Development plan: nine GitHub Issues
 
-Milestones map to the four lesson phases and to SPEC section 12 slices. Each issue is small, has "Done when" criteria, and gets its own branch and PR.
+The work is organized as **exactly nine high-level Issues**, done **one at a time, in order**, each on its own branch (`<issue-number>-<short-name>`) with its own Pull Request, following the ticket loop in `practice.md`. There are no sub-Issues and no separate milestones; the nine Issues are the plan. All approved SPEC.md and architecture.md requirements are covered (the mapping to SPEC acceptance criteria is given per Issue).
 
-**Setup status:** the private repository exists and the initial planning files are committed to `main` (commit `5290bd5`); the private Project board with To do / In progress / Done columns exists and is linked to the repository. **No Issues have been created yet; the list below awaits owner approval.** No collaborators have been invited.
+**Tests are written with each feature, not postponed.** Every Issue ships its own pytest tests (and a manual four-width responsive check for UI work, as `practice.md` requires). Issue 8 adds the cross-cutting layer: simulated Evals, automated responsive browser checks and the full CI gate, and Issue 9 extends that coverage to the template editor.
 
-### Milestone M0 - Design and Place (docs)
-1. **Add architecture.md** (this document, reviewed) - Done when: owner approves; diagrams render on GitHub. *Status: committed to `main` in the initial planning commit; later corrections go through an Issue and PR.*
-2. **Add README with local run instructions, `.gitignore`, `.env.example`** - Done when: a fresh clone can follow the README (no code yet beyond placeholders). *Status: `README.md` and `.gitignore` are on `main`; `.env.example` and the local run instructions remain.*
+**Setup status:** the private repository exists and the planning files are on `main`; the private Project board with To do / In progress / Done columns exists and is linked to the repository. **No Issues have been created yet; this list awaits owner approval.** No collaborators have been invited.
 
-### Milestone M1 - Manage setup
-3. **Repository hygiene: issue templates, PR template, labels per phase** - Done when: a sample issue and PR use the templates. *Status: the Project board and its columns already exist; templates and labels remain.*
-4. **Add minimal `CLAUDE.md` pointer to SPEC.md, practice.md, architecture.md** - Done when: file contains pointers only. *Status: already on `main`.*
+**CI timing (approved):** Issue 2 adds a minimal GitHub Actions workflow (lint + pytest on every Pull Request, no secrets), so every later PR is checked from the start. Issue 8 extends it with the simulated Evals and the browser-based responsive tests. The editable template (Issue 9) is built last and brings its own tests; its flows are added to the Issue 8 browser tests.
 
-### Milestone M2 - Walking skeleton and Test/Eval foundation
-5. **App skeleton: FastAPI app factory, localhost guard, Host allow-list, health route, static shell, config, bundled Heebo font with license** - Done when: server refuses a non-loopback host; test proves it; Hebrew text renders in the bundled font with no external requests.
-6. **SQLite migrations runner and initial schema (3.2) with partial unique indexes** - Done when: schema tests pass on a temp DB.
-7. **CI workflow: lint + pytest on PR, no secrets** - Done when: a PR shows a green check.
-8. **Seed v1 template (18 questions, original Hebrew wording and sections, all `required: true`) and synthetic demo leads** - Done when: seed is idempotent; fixtures marked fictional; a test asserts 18 of 18 questions are required.
+### Issue 1 - Project documentation and management setup
+*Status: partly done (architecture, `CLAUDE.md`, `README.md`, `.gitignore`, repository and Project board exist).*
+- **Scope:** finish the documentation and management layer: `README.md` with purpose, the four phases and local-run instructions (placeholders until Issue 2), `.env.example` (variable names only), GitHub Issue template and PR template (objective, scope, "Done when", test plan, automated-versus-manual checklist), phase labels.
+- **Done when:** the templates are used by the Issues and PRs that follow; the README states purpose, the four phases and that deployment is out of scope; no secret or real data is in the repository; the board columns exist (done).
+- **Test plan:** manual: Mermaid diagrams render on GitHub; a fresh read of the README is understandable; the first PR (Issue 2) uses the PR template. No automated tests.
+- **SPEC acceptance:** 16.
 
-### Milestone M3 - Leads and instances
-9. **Create/edit lead; dashboard list with status, sent date, elapsed days (mobile card layout)** - Done when: SPEC acceptance 1-2.
-10. **Create questionnaire instance with frozen snapshot, token link (hash stored, shown once), mark as sent, revoke/regenerate, one-active rule** - Done when: snapshot immutability and one-active tests pass.
+### Issue 2 - Application skeleton, database and questionnaire seed
+- **Scope:** FastAPI app factory bound to localhost with a startup guard and Host allow-list; health route; static HTML shell; config from environment; Heebo font bundled locally with its license. SQLite with a numbered-SQL migration runner and the full schema from section 3.2 (partial unique indexes, `CHECK` constraints including `marked_unknown`). Seed of template v1 (the 18 original questions, original Hebrew wording and sections, all `required: true`; types: long/short text, Q5 and Q6 contact groups with their fields, Q17 date; semantic tags `stakeholders`, `sponsor`, `end_users`) and fictional demo leads. Minimal CI workflow: lint and pytest on every Pull Request, no secrets (see "CI timing").
+- **Done when:** the app starts only on a loopback address and refuses others; Hebrew text renders in the bundled font with no external requests; migrations create the schema on an empty database; the seed is repeatable and marks demo data as fictional; CI is green on the PR.
+- **Test plan:** pytest: non-loopback host refused; foreign `Host` header rejected; served HTML/CSS contains no external URLs; second active instance per lead and second live/successful AI run per kind rejected; `marked_unknown` cannot coexist with a value; seed run twice gives identical rows; all 18 questions required; wording matches SPEC.md; field types of Q5, Q6, Q17 correct.
+- **SPEC acceptance:** 14 (test foundation), 17 (required questions, free-text types).
 
-### Milestone M4 - Respondent form
-11. **Respondent form renderer for all field types (free text for text questions; date picker and contact groups with the "לא ידוע / טרם הוחלט" option), Hebrew RTL, mobile-first, person-group cards** - Done when: renders at 320/375/768/1280 without horizontal scroll; the unknown option has a 44px touch target and keyboard access on date and contact-group questions only.
-12. **Autosave state machine (versions and conflict handling, debounce, local draft, indicator, offline retry), save draft and resume** - Done when: race, two-device conflict, offline and refresh regression tests pass.
-13. **Progress percentage (required-only), unknown marker for date/contact groups, and respondent progress bar** - Done when: unit tests cover all field types; non-empty free text including "לא יודע" counts; a marked-unknown date or contact group counts; 18 of 18 complete shows 100% with `submitted_at` still empty; server rejects "המשך לשליחה" while any required question is empty.
+### Issue 3 - Admin dashboard, leads and questionnaire links
+- **Scope:** create and edit leads (company, email, phone, optional contact name); dashboard as mobile-friendly cards showing company, status, sent date, elapsed days (progress and last-activity fields are added in Issue 5); create a questionnaire instance from the latest published template as a frozen snapshot with the heading "שאלון איפיון להטמעת AI - {שם העסק}"; token link (hash stored, shown once, copyable); mark as sent (status `חדש` to `ממתין למילוי`, status-history row, no email is ever sent); revoke and regenerate link; void an instance; one active instance per lead.
+- **Done when:** an admin can create a lead, create the questionnaire, copy the link, mark it sent and see the sent date and elapsed days; a revoked or regenerated old link stops working; a second active instance for a lead is refused; the page works at 320/375/768/1280 without horizontal scroll.
+- **Test plan:** pytest/API: validation, initial status, elapsed-days calculation, snapshot unchanged after a template change, one-active rule, only the token hash stored, unknown/revoked/expired tokens give the same 404, regenerate invalidates the old link, mark-sent sets status and history. Manual: four-width check of the dashboard and lead form.
+- **SPEC acceptance:** 1, 2.
 
-### Milestone M5 - AI and submission (the minimum demonstrable slice completes here)
-14. **AIProvider interface, orchestration with idempotent runs, MockProvider follow-ups (0-5, driven by unknown information, never by not-applicable information), failure path** - Done when: SPEC acceptance 10 and 20 hold with the mock; labeled simulated.
-15. **Continue, follow-up answer/skip, final submit (idempotent), read-only after submission, status to `התקבל`** - Done when: double-submit regression test passes.
-16. **Auto-trigger mock analysis once after submit; admin AI tab with simulated badge and source IDs; never re-called on view; stated, unknown and not-applicable items in separate groups, interpretations labeled** - Done when: view-twice test shows one provider call; a test confirms the groups are not merged, interpretations are labeled as such, and no value is attributed to an unknown.
-17. **Internal notes: per-answer threads and lead notes, bubbles, respondent never sees them** - Done when: respondent-schema leak test passes.
+### Issue 4 - Respondent questionnaire UI
+- **Scope:** the private page `/r/{token}`: heading with the company name injected, intro, sections and questions rendered from the instance snapshot; long/short text (free text only, no predefined options); date question with a native calendar picker; repeatable contact groups as stacked cards with add/remove and the original fields (Q5: name, role, responsibility; Q6: name, role); the explicit "לא ידוע / טרם הוחלט" option on date and contact-group questions only; validation messages; RTL, mobile-first layout, Heebo font, palette, accessibility (labels, focus, keyboard, 44px targets); neutral page for invalid/revoked links. The respondent API returns only allow-listed fields. Answers are held in the page in this Issue; persistence comes in Issue 5.
+- **Done when:** all question types render and behave correctly at 320/375/768/1280 without horizontal scroll; the unknown option appears only on date and contact-group questions; contact rows add and remove without losing other rows' data; keyboard use and visible focus work; a revoked link shows the neutral page.
+- **Test plan:** pytest/API: respondent GET returns only allow-listed fields (no notes, AI data or rationales); invalid and revoked tokens give the neutral 404. Manual: four-width inspection (RTL, touch targets, wrapping of long Hebrew, focus order); automated responsive coverage is added in Issue 9.
+- **SPEC acceptance:** 1 (heading), 6 (contact rows and sponsor fields), 15 (respondent form), 17, 18 (UI part).
 
-### Milestone M6 - Test/Eval and responsive gate
-18. **Eval cases (synthetic Hebrew, including natural-language unknown and not-applicable answers, marked-unknown date and contact groups, and mixed cases), runner, simulated report with labeling rules** - Done when: report header shows `is_simulated: true` and "real Evals: not run"; the unknown vs. not-applicable checks run.
-19. **Playwright responsive smoke for respondent and admin at four widths + manual checklist in PR template** - Done when: green in CI; manual items listed separately.
+### Issue 5 - Autosave, drafts and progress tracking
+- **Scope:** debounced autosave (about 1 s) with a local draft, server-assigned answer versions with `base_version`/`change_id`, conflict handling for two devices, offline retry and the save indicator ("שומר...", "נשמר", "לא מסונכרן", "יש התנגשות"); "שמירת טיוטה ויציאה" and resume through the same link; persistence of the unknown marker; required-only progress percentage with the separate optional counter and the stage indicator (filling stage; follow-up and submission stages are wired in Issue 6); sessions, heartbeat, server-computed active time and progress events; progress and last-activity fields on the dashboard.
+- **Done when:** a respondent can leave, refresh and resume without losing answers; no AI or per-keystroke network call occurs; the indicator never shows "נשמר" while changes are unconfirmed; conflicting edits from two devices are never silently overwritten; 100% is reached when all required questions are complete and `submitted_at` stays empty with status `ממתין למילוי`; saving a draft does not change the primary status.
+- **Test plan:** pytest: delayed older write cannot overwrite newer data, retried `change_id` is idempotent, equal edits converge, conflicting edits return a conflict and lose nothing; progress for every field type (non-empty text including "לא יודע" counts, marked-unknown date/contact group counts, empty does not, optional counter separate); session rules (5-minute idle, hidden tab, new session on return), active-time cap and no double counting. Manual: offline and refresh behavior, four-width check of the indicator and progress bar.
+- **SPEC acceptance:** 3, 4, 6, 8 (data and dashboard), 9, 18, 19.
 
-### Milestone M7 - Tracking and contacts
-20. **Sessions, heartbeat, active time, progress events** - Done when: SPEC acceptance 8 holds; unit tests for session rules.
-21. **Admin lead-detail tabs (four) with tracking timeline and mobile-safe navigation** - Done when: usable at 320px.
-22. **Contacts extraction by semantic tag (rows actually entered), manual add/edit/remove, dedupe** - Done when: SPEC acceptance 7 holds; a sponsor group marked unknown creates no contact.
-23. **Status history and controlled transitions UI** - Done when: transition rules tested.
+### Issue 6 - Mock AI follow-ups, final submission and analysis
+- **Scope:** `AIProvider` interface and orchestration; deterministic `MockProvider` (labeled simulated); "המשך לשליחה" with server-side validation of required questions; automatic follow-ups (0-5, driven by unknown information, never by information read as not applicable), answered or skipped by the respondent; failure never blocks the respondent; final submission (idempotent, read-only afterwards, `submitted_at`, status `התקבל`, "נשלח" confirmation); automatic one-time analysis run created inside the submit transaction; lease and sweep recovery for interrupted `pending` runs; admin analysis view (simulated badge, source question IDs, stated / unknown / not-applicable groups, interpretations labeled, never marked verified) with a retry button shown only after a failed run.
+- **Done when:** follow-ups never exceed five and can be zero; a double submit or a refresh creates no second run; opening the analysis twice makes one provider call; a stuck `pending` run becomes `failed` and can then be retried by the admin; no value is attributed to an unknown item; the respondent never sees rationales, source IDs or analysis.
+- **Test plan:** pytest with the mock: follow-up cap, no repeats, valid source IDs, failure path; duplicate submit and duplicate run; 409 on writes after submission; status and `submitted_at` rules; view-twice single call; interrupted run swept without duplicate or auto re-run; late result discarded; retry only after `failed`; interpretation labeling and group separation. These are simulated checks, not evidence of model quality. Manual: four-width check of the follow-up and confirmation screens.
+- **SPEC acceptance:** 10, 11, 13, 19, 20.
 
-### Milestone M8 - Template editor
-24. **Template draft API: add/remove/edit/reorder, stable IDs, tags, validation** 
-25. **Editor UI with up/down reorder, preview, publish; mobile-usable** - Done when: SPEC acceptance 5 holds; old instances unchanged.
+### Issue 7 - Admin results, contacts and internal notes
+- **Scope:** the lead-detail page with its four tabs (פרטי לקוח, תשובות והערות, ניתוח AI, מעקב מילוי) using a mobile-safe tab pattern; verbatim answers with the unknown marker shown as a labeled marker; per-answer internal note threads and general lead notes (append-only, timestamped bubbles, fixed demo author) that never reach the respondent; the tracking tab (timestamps, completion, sessions, approximate active time, activity timeline, follow-ups asked/answered/skipped); contact extraction at submission by semantic tag (rows actually entered, deduplicated, provenance kept), manual add/edit/remove without touching answers; controlled status transitions with history.
+- **Done when:** an admin can review a submitted questionnaire end to end on desktop and at 320px; notes appear beneath their answer on phones and beside it on wide screens and wrap long Hebrew, emails and links; a sponsor group marked unknown creates no contact; removing an extracted contact does not recreate it later; status changes follow the allowed transitions and are logged.
+- **Test plan:** pytest: respondent responses contain no notes or AI data; notes append-only with ordering; contact extraction, dedupe, soft-delete, manual edits leave answers unchanged, unknown sponsor creates no contact; allowed and forbidden status transitions and history rows; tracking figures match the underlying events. Manual: four-width check of all tabs and long-text wrapping.
+- **SPEC acceptance:** 7, 8 (display), 11, 12, 13, 15 (admin parts).
+
+### Issue 8 - Automated tests, simulated Evals, responsive checks and GitHub Actions
+- **Scope:** Eval cases (synthetic Hebrew questionnaires, including natural-language "לא יודע" / "לא רלוונטי" answers, marked-unknown date and contact groups, and mixed cases), the Eval runner and a labeled simulated report; Playwright responsive smoke tests for the respondent and admin flows at 320, 375, 768 and 1280px; extension of the Issue 2 CI workflow (browser tests, Evals, no secrets, no paid APIs); the mobile acceptance checklist in the PR template; a short test report stating what was automated and what was only inspected manually; check against the SPEC acceptance list (the template-editor criteria, 5 and 21, are completed and added to the report in Issue 9); verification of what the private-repository plan allows for required checks, with the documented fallback if unavailable.
+- **Done when:** the Eval report header shows `is_simulated: true` and "real-model Evals: not run" and the runner refuses to label a mock run as real; the unknown versus not-applicable checks run; the responsive tests pass in CI and check no horizontal overflow, RTL, key controls and touch-target size at the four widths; CI is green on a PR with no secrets; the test report and checklist are committed.
+- **Test plan:** the Evals and browser tests above are themselves the deliverable; additionally pytest verifies that the report-labeling rule cannot be bypassed. Real-model Evals remain a separate, later step that needs explicit approval of provider and budget.
+- **SPEC acceptance:** 14, 15, 22.
+
+### Issue 9 - Editable questionnaire template and versioning
+- **Scope:** admin template editor: add, remove (archive), edit and reorder sections and questions with up/down controls; supported types (long text, short text, date, repeatable contact groups with configurable sub-fields); required/optional per question (new questions default to required); stable question IDs and semantic tags; preview; publish as a new immutable version; version 1 stays untouched; existing instances keep their snapshots.
+- **Done when:** an admin can edit the draft, preview it and publish version 2; a new instance uses version 2 while earlier instances keep their wording and field IDs; publishing is refused when there is no required question, when a tag is duplicated, or when a type change would affect a question that already has answers; the editor works on a phone without drag-and-drop, and the automated responsive checks from Issue 8 cover it.
+- **Test plan:** pytest (written with this Issue): each publish validation rule, stable IDs preserved through reorder and edit, archived questions keep answer linkage, snapshot immutability after publish, version 1 unchanged, contact extraction still works after reordering (tags, not numbers). The editor and preview flows are added to the Issue 8 Playwright responsive smoke tests and the test report is updated; manual four-width check of the editor and preview.
+- **SPEC acceptance:** 5, 15 (editor), 21.
 
 ### Deferred, not forgotten
-- Real-provider Evals (needs provider, model and budget approval), real AI provider class, Google Docs export, authentication/RBAC and deployment (9.3).
+- Real-provider Evals (needs provider, model and budget approval), real AI provider class, Google Docs export, authentication/RBAC and deployment (section 9.3).
