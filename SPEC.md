@@ -19,7 +19,7 @@ Demo scope: a small consultancy (initially 1-5 staff), tens of leads, full-featu
 2. Admin creates a questionnaire instance from the current master questionnaire; its heading is **"שאלון איפיון להטמעת AI - {שם העסק}"**, where the company name is injected automatically. Do not ask the lead to re-enter the company name.
 3. Admin copies/shares the questionnaire's unique link. Track the actual sent timestamp separately from creation; in a local demo allow admin to mark it as sent. **Never claim an email was sent without a real send operation.**
 4. Lead fills the original questionnaire; every keystroke updates local state immediately and a durable local draft, while background saves to the backend are debounced. The UI distinguishes "שומר..." from server-confirmed "נשמר". A **"שמירת טיוטה ויציאה"** button forces a save and allows resumption through the same link.
-5. When the lead chooses **"המשך לשליחה"**, the answers are saved and the AI reviews gaps. Ask **0-5 concise, useful, nonredundant follow-up questions**, never five just to meet a quota. Questions are optional/skippable; do not needlessly request sensitive details. Display them in the same flow before final submission.
+5. **"המשך לשליחה"** is available only when every required question is complete: a non-empty answer (free text of any content, including an answer such as "לא יודע"), or, for date and contact-group questions only, a filled-in value or the explicit option **"לא ידוע / טרם הוחלט"** (see section 5). Optional questions may stay empty. When the lead chooses it, the answers are saved and the AI reviews gaps. Ask **0-5 concise, useful, nonredundant follow-up questions**, never five just to meet a quota. Questions are optional/skippable; do not needlessly request sensitive details. Display them in the same flow before final submission.
 6. Lead clicks **"שליחה סופית"**. Save all original and follow-up answers, with submitted timestamp. If no relevant follow-up questions exist, proceed directly to final submission with clear confirmation.
 7. The system prepares an **internal draft AI analysis**: business need, current workflow, hoped-for outcomes/KPIs, relevant stakeholders and systems, data and security considerations, unknowns, suggested questions for the next call, and tentative solution directions clearly labeled as hypotheses. The team reviews it; AI does not autonomously make the final solution decision.
 8. Admin reviews the full questionnaire, adds private notes alongside individual answers and general lead notes, tracks progress and advances lead status.
@@ -39,7 +39,8 @@ Dashboard: company name, lead status, questionnaire sent date/time, elapsed cale
 
 Progress tracking on the lead-detail page:
 - Link created and actually sent timestamps; first opened and first meaningful answer timestamps.
-- Current completion percentage and sections completed, based on fields in **this lead's frozen questionnaire version**; count answered applicable questions, not characters typed. Repeatable stakeholder rows count as their question, not one question per row.
+- Current completion percentage and sections completed, based on the **required questions** in **this lead's frozen questionnaire version**; count completed questions, not characters typed. A question is complete when it has a non-empty answer (including free text such as "לא יודע"), or, for date and contact-group questions, when it has a value or is marked "לא ידוע / טרם הוחלט"; only an empty question is incomplete. Optional questions are shown separately (for example, "3 of 7 optional answered") and never change the percentage. Repeatable stakeholder rows count as their question, not one question per row.
+- **100% completion is not submission.** At 100% the lead is still `ממתין למילוי`, nothing has been sent, and the form stays editable; only a successful "שליחה סופית" sets the submitted timestamp, changes the status to `התקבל` and shows "נשלח".
 - First/last activity, final submission time, elapsed time from first open to submission, approximate **active filling time**, and distinct filling sessions.
 - Session timeline: started, paused/idle, resumed, draft explicitly saved, progress changed, final submission. Show timestamps and percentage at useful milestones; avoid a keystroke log.
 - Active time is approximate: stop counting when tab is hidden or after an inactivity threshold (initial proposal: 5 minutes). Avoid double counting and use a clearly documented session definition.
@@ -55,7 +56,7 @@ Progress tracking on the lead-detail page:
 - Show private general notes and dated history per lead.
 
 ### Questionnaire template editor
-- Edit the master template through the admin UI, without modifying code: add/remove/reorder sections or questions, edit wording, choose supported types (long text, short text, date, selection, repeatable people rows), set required/optional.
+- Edit the master template through the admin UI, without modifying code: add/remove/reorder sections or questions, edit wording, choose supported types (long text, short text, date, selection, repeatable people rows), set required/optional per question. In template v1 all 18 original questions are required; new questions default to required, and the setting remains configurable for future versions. A version needs at least one required question to be published. Date and repeatable contact-group questions always offer the explicit option "לא ידוע / טרם הוחלט"; long and short text questions are free-text only.
 - New questionnaire instances take a **versioned snapshot** of the template. Edits to the master must not alter in-progress or submitted instances.
 - Prefer safe deactivation/archive over destructive removal of historical answer fields. Stable question IDs; preserve answer linkage through template versions.
 - Preview before publishing a new template version; retain initial original as version 1.
@@ -76,6 +77,8 @@ Progress tracking on the lead-detail page:
 Source: attached original document titled "שאלון אפיון להטמעת פתרונות AI.docx". Keep original content and section grouping for initial template v1; user can later edit text through the admin template editor. Attribution/intro can be configured by admin rather than hard-coded as a provider's brand.
 
 **Intro (original)**: "לקוח יקר, על מנת שנוכל לדייק את הפתרון הטכנולוגי לצרכים העסקיים שלך ולהבטיח הטמעה חלקה ומוצלחת, אנא הקדש/י מספר דקות למענה על השאלות הבאות."
+
+**Requirements and answer input (v1):** all 18 questions are **required**. Text questions are **free-text only**, with no predefined options: respondents may write "לא יודע", "טרם הוחלט", "לא רלוונטי" or similar naturally, and any non-empty text counts as an answer for progress and validation. For the date question (17) and the repeatable contact groups (questions 5 and 6), the respondent may instead select **"לא ידוע / טרם הוחלט"**. Selecting it satisfies required validation and counts toward completion, and it is stored distinctly from an actual date or contact entry (the admin sees it as a labeled marker, not as a date or contact).
 
 ### חלק א': ההקשר העסקי והמטרות
 1. מהו האתגר המרכזי או נקודת הכאב (Pain Point) שאתם מנסים לפתור באמצעות בינה מלאכותית?
@@ -124,10 +127,11 @@ Autosave design:
 Follow-up generation (after original questionnaire, before final submission):
 - 0-5 short, clearly worded questions in Hebrew only when materially useful to the next discovery call.
 - Do not repeat answered questions or request unnecessary secrets/PII; avoid speculative claims. Questions are skippable.
+- Interpret natural-language answers: the AI may recognize when a free-text answer says the information is unknown or undecided (for example "לא יודע", "טרם הוחלט") or not applicable ("לא רלוונטי"), and may treat important unknowns as gaps for an optional follow-up (still within the 0-5 limit). These are AI interpretations, labeled as such; they are never stored as user-selected states. A date or contact-group question marked **"לא ידוע / טרם הוחלט"** is a recorded unknown and may likewise be identified as a gap requiring follow-up. Information interpreted as not applicable is not treated as a gap. The AI must never invent, guess or imply a value for missing information.
 - Use structured output with stable IDs, rationale for the internal team, and links to relevant original question IDs. Rationale remains internal.
 - On AI failure, don't block the user: allow submission without additional questions and flag analysis as pending/unavailable.
 
-Internal analysis: summarize using only submitted answers; distinguish facts, assumptions, unanswered questions, risks, and potential directions. No final implementation recommendation without human review.
+Internal analysis: summarize using only submitted answers; distinguish facts, assumptions, unanswered questions, risks, and potential directions. Keep three groups apart: information the client stated, items that are unknown or undecided (marked "לא ידוע / טרם הוחלט" on a date or contact question, or interpreted by the AI from free text and labeled as an interpretation) as open items for the next call, and items interpreted as not applicable (reported as such, not as gaps). No final implementation recommendation without human review.
 
 Costs: minimize model calls. **No paid API/services, Railway provisioning, domain purchase, or deployment without explicit owner approval and budget disclosure**. Mock AI responses for deterministic tests. Actual live AI and its Eval results must be labeled clearly as real vs simulated.
 
@@ -176,7 +180,12 @@ No full CRM, outbound email automation, calendar integration, invoicing, proposa
 14. Functional code Tests and AI Eval case definitions exist, with a reproducible free CI workflow that does not use real paid APIs.
 15. Respondent and admin workflows are usable at 320px/375px phone widths, 768px tablet, and 1280px desktop without horizontal page scrolling or inaccessible controls; add-person inputs, admin notes, editor and progress tracking remain usable on mobile.
 16. Repository includes planned architecture and its rationale, GitHub Issues/Project, `practice.md`, feature branches and Pull Requests as part of the Lesson 9 workflow. Deployment is excluded.
-
+17. In template v1 all 18 questions are required. Text questions are free-text only with no predefined options; any non-empty text, including an answer such as "לא יודע", counts as an answer for progress and validation.
+18. Date questions and repeatable contact groups offer "לא ידוע / טרם הוחלט". Selecting it satisfies required validation, counts toward completion, is stored distinctly from an actual date or contact entry, and is visible to the admin as a labeled marker. No contact is created from a group marked unknown.
+19. The progress bar reaches 100% when all required questions (all 18 in v1) are complete; optional questions (in later versions) are shown separately and do not change the percentage. At 100%, `submitted_at` is still empty, the status is still `ממתין למילוי` and the form is still editable; only a successful final submission sets `submitted_at` and shows "נשלח".
+20. The AI interprets natural-language answers and identifies unknown or not-applicable information when possible, labeled as AI interpretation and never stored as a user-selected state. It may suggest follow-up questions (max 5) about important unknowns, including date and contact questions marked "לא ידוע / טרם הוחלט"; it does not treat not-applicable information as a gap and does not invent missing information.
+21. Required/optional remains configurable per question in the template editor for future versions; v1 remains unchanged for existing instances.
+22. Automated tests cover: progress with free-text answers (including "לא יודע"), the date/contact "לא ידוע / טרם הוחלט" marker, server-side validation of "המשך לשליחה", completion without submission, and marker handling in autosave conflicts. Eval cases cover natural-language unknown and not-applicable answers, marked-unknown date and contact questions, and mixed questionnaires.
 ## 11. Lesson 9 expected deliverables
 
 - **Design**: `SPEC.md` (this file) and `architecture.md` with component diagram/flows and documented decisions.
