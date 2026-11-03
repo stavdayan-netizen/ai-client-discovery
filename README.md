@@ -15,7 +15,7 @@ This is a learning project for the AiDO Lesson 9 assignment. All data in it is s
 
 ## Status
 
-Planning and setup stage. No application code yet. Architecture is approved for the local assignment MVP.
+Early development. The application skeleton, database schema and questionnaire seed exist (Issue #2); the screens come in later Issues. Architecture is approved for the local assignment MVP.
 
 The development plan is nine GitHub Issues, done one at a time in order, each with its own branch and Pull Request (see `architecture.md`, section 14): documentation and setup; skeleton, database and questionnaire seed; admin dashboard, leads and links; respondent UI; autosave and progress tracking; mock AI follow-ups, submission and analysis; admin results, contacts and notes; automated tests, simulated Evals, responsive checks and CI; editable questionnaire template.
 
@@ -25,16 +25,19 @@ Python, FastAPI, SQLite, HTML, CSS and vanilla JavaScript. No Node.js or fronten
 
 ## Running locally
 
-*Placeholder: the application does not exist yet. These instructions become real when Issue #2 (application skeleton) is merged.*
+Requirements: Python 3.12. Nothing is deployed, and no paid service or live AI call is used.
 
-Planned shape (see `architecture.md`, section 8.1):
+```bash
+python -m venv .venv
+.venv\Scripts\activate           # Windows; on macOS/Linux: source .venv/bin/activate
+pip install -r requirements-dev.txt
+python -m app.seed               # creates data/app.db (git-ignored) with template v1 and fictional demo leads
+python -m app                    # starts the server on http://127.0.0.1:8000
+```
 
-1. Install Python 3 (exact version to be pinned in Issue #2).
-2. Create and activate a virtual environment, then install the dependencies: `pip install -r requirements.txt`.
-3. Optionally copy `.env.example` to `.env` (git-ignored; names only, no secrets are needed).
-4. Start the server on localhost only: `uvicorn app.main:app --host 127.0.0.1`.
-
-Nothing is deployed, and no paid service or live AI call is used.
+- `python -m app` is the supported launcher. It listens on localhost only and refuses to start on any other address. The application has **no authentication yet**, so it must never be exposed to a network (see `architecture.md`, sections 9.1 to 9.3).
+- Optional settings (`HOST`, `PORT`, `DATABASE_PATH`, `AI_PROVIDER`) come from environment variables or a git-ignored `.env` file copied from `.env.example`. Only the `mock` AI provider exists.
+- Run the checks: `ruff check .`, `ruff format --check .` and `python -m pytest`. The same checks run in GitHub Actions on every Pull Request.
 
 ## Out of scope
 

@@ -77,9 +77,12 @@ SPEC.md  practice.md  architecture.md  README.md  .gitignore  CLAUDE.md   # alre
 .env.example                                                              # added by Issue #1 (names only)
 .github/ISSUE_TEMPLATE/task.md  .github/pull_request_template.md           # added by Issue #1
 app/
-  main.py              # app factory, startup guards, static mounting
-  config.py            # env-driven settings
-  db.py                # sqlite3 connection, migration runner
+  main.py              # app factory, middleware, static mounting
+  run.py  __main__.py  # guarded launcher: python -m app
+  network.py           # localhost-only protections, security headers
+  config.py            # env-driven settings (+ optional .env)
+  db.py                # sqlite3 connection, transactions, migration runner
+  seed.py  seed_data/  # template v1 and fictional demo leads
   migrations/          # numbered .sql files (0001_init.sql, ...)
   api/                 # admin_*.py, respondent.py (thin routers)
   schemas/             # pydantic models: admin_out.py, respondent_out.py, ...
@@ -445,7 +448,7 @@ Adding a provider means: one new class implementing the interface, one registry 
 | CI | GitHub Actions runners (free tier) | Tests, evals (simulated), lint; no secrets, no network need beyond package install |
 | Secrets | None required. Optional `.env` (git-ignored) with `AI_PROVIDER`, `DATABASE_PATH`; `.env.example` lists names only | A future API key would live only in `.env` and CI secrets, never in the frontend or Git |
 
-Local run is documented in `README.md` as: create a virtual environment, `pip install -r requirements.txt`, `uvicorn app.main:app --host 127.0.0.1`. Seed command creates synthetic leads clearly marked fictional.
+Local run is documented in `README.md` as: create a virtual environment, `pip install -r requirements.txt`, then **`python -m app`** (the supported launcher, which refuses any non-loopback address). `python -m app.seed` creates the v1 template and synthetic leads clearly marked fictional.
 
 ### 8.2 Runtime limits (enforced in code)
 
@@ -491,8 +494,8 @@ Planning only. Nothing here is purchased, provisioned or deployed. Prices are in
 
 ### 9.1 What the MVP does
 
-- **Localhost only.** The server binds `127.0.0.1`. Startup **refuses** to run if `HOST` is set to a non-loopback address unless a clearly named override variable is set (and the README says not to).
-- **Host-header allow-list** (`localhost`, `127.0.0.1`, `[::1]`) to defend the unauthenticated admin API against DNS-rebinding from a malicious web page open in the same browser.
+- **Localhost only, in three independent layers.** (1) The launcher `python -m app` binds `127.0.0.1` and **refuses** to start if `HOST` is any non-loopback address; there is no override. (2) Starting `uvicorn app.main:app --host 0.0.0.0` directly fails at import time (best effort: the command line and `UVICORN_HOST` are inspected). (3) **Authoritative layer:** whatever the bind address, every request is refused with 403 unless its TCP peer address is loopback; this cannot be forged with headers, and the launcher disables proxy-header handling so the peer address is never replaced by `X-Forwarded-For`. Residual limits: a deliberately configured trusted proxy on the same machine (for example `--forwarded-allow-ips '*'` or a local tunnel) can make remote traffic look local, and the local machine's own LAN address is treated as remote. Do not run behind a tunnel or reverse proxy.
+- **Host-header allow-list** (`localhost`, `127.0.0.1`, `[::1]`) to defend the unauthenticated admin API against DNS-rebinding from a malicious web page open in the same browser. It is not a network access control, because a remote client can send any Host header; layer (3) is.
 - **Respondent access is capability-based.** Tokens are 32 random bytes (`secrets.token_urlsafe`), only a SHA-256 hash is stored, comparison is constant-time, and the token never appears in logs. Links are **revocable** and may have an optional expiry; revoked, expired and unknown tokens are indistinguishable (same 404).
 - **Strict data separation.** Respondent endpoints return only allow-listed fields for their own instance. Notes, AI analysis, follow-up rationales, source question IDs for rationale, and other leads never appear in respondent schemas. Tests assert this by scanning respondent responses for forbidden keys.
 - **Input handling.** Parameterized SQL only; length and type validation with Pydantic; output rendered with `textContent`; a restrictive Content-Security-Policy header (self-only scripts and styles, no inline script).
@@ -599,6 +602,8 @@ The requirements in SPEC.md and the owner's decisions all remain in force. This 
 | D-21 | `pending` AI runs carry a `lease_expires_at`; a sweep at startup and before run reads/creation marks expired ones `failed` (`interrupted`); the analysis `pending` row is created inside the submit transaction; late results are discarded by a conditional update | Background scheduler; automatic re-run; leaving runs `pending` forever | Fixes the stuck-`pending` state after a crash without a scheduler, keeps the one-run guarantee (D-16), and keeps retry admin-only and after-failure-only (D-10). Cost: an interrupted run needs a manual admin retry. |
 | D-23 | Text questions are free-text only; any non-empty text, including "לא יודע", counts as an answer. Date and `person_group` questions offer "לא ידוע / טרם הוחלט", which satisfies required validation, counts as complete and is stored as a separate `marked_unknown` flag with no value. Template v1: all 18 questions required | A four-state answer model on every question (`unknown` / `not_applicable` options), introduced and then reverted after the owner clarified the questionnaire is free text | **Approved by owner.** Keeps the original free-text questionnaire unchanged and gives fixed-structure fields a way to say "not known yet". Cost: unknowns in free text are only found by AI interpretation, so 100% can include answers like "לא יודע". |
 | D-24 | The AI interprets natural-language answers to identify unknown or not-applicable information when possible. Interpretations are labeled, stored only in AI run output, and never treated as user-selected states. Unknowns (interpreted, or marked on date/contact questions) may drive optional, skippable follow-ups within the 0-5 cap; not-applicable information is not treated as a gap; no value is ever inferred | Parse free text into stored states | **Approved by owner.** Prevents invented information and keeps AI judgment visibly separate from what the respondent said or selected. The mock only matches fixed phrases; real interpretation quality is evaluated later with a real model. |
+| D-25 | `python -m app` is the supported launcher; localhost-only enforced in three layers (launcher refusal, import-time refusal of a non-loopback `uvicorn --host`, and an authoritative per-request check of the TCP peer address); the optional override variable is dropped; `proxy_headers` disabled | Host-header check only; env check only; keeping an override | **Approved by owner (Issue #2).** The Host header is client-controlled, so it cannot protect against other machines, and a direct `uvicorn` command can bypass the launcher. Verified with a real socket: a peer on the LAN address is refused (403) even with a forged `Host: localhost`. Cost: using the machine's own LAN address, a tunnel or a reverse proxy is not supported. |
+| D-26 | Python 3.12, Ruff, pytest and fully pinned dependencies (`requirements.txt`, `requirements-dev.txt`); Heebo variable TTF and its OFL license bundled from the official Google Fonts repository; fixed v1 IDs `sec_a`..`sec_f`, `q_01`..`q_18`; demo data marked fictional by name, `example.com` emails and fake phones (no schema change); restrictive security headers and disabled interactive API docs (they load CDN scripts) | Unpinned dependencies; font CDN; an `is_demo` column | **Approved by owner (Issue #2).** Reproducible local and CI runs; no external requests at runtime; repeatable seed. |
 | D-22 | 100% = all required base questions complete (D-23), which enables "המשך לשליחה"; completion is separate from submission. Only a successful final submission sets `submitted_at`, status `התקבל` and the "נשלח" text. Respondent UI shows a three-step stage indicator and "not sent yet" wording; `base_completed_at` is set by "המשך לשליחה" | Treat 100% as complete/received | **Confirmed by owner.** Prevents a lead believing they have sent the questionnaire; keeps `התקבל` tied only to final submission (D-8, SPEC section 3). |
 
 ---
