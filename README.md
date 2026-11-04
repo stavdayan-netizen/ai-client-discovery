@@ -21,7 +21,7 @@ The development plan is nine GitHub Issues, done one at a time in order, each wi
 
 ## Planned stack
 
-Python, FastAPI, SQLite, HTML, CSS and vanilla JavaScript. No Node.js or frontend frameworks. A deterministic mock AI provider is used first; real AI and real-model Evals will be added only after explicit approval.
+Python, FastAPI, SQLite, HTML, CSS and vanilla JavaScript. No Node.js or frontend frameworks. A deterministic mock AI provider is used first; a real AI provider and API-based Evals will be added only after explicit approval.
 
 ## Running locally
 
@@ -38,6 +38,10 @@ python -m app                    # starts the server on http://127.0.0.1:8000
 - `python -m app` is the supported launcher. It listens on localhost only and refuses to start on any other address. The application has **no authentication yet**, so it must never be exposed to a network (see `architecture.md`, sections 9.1 to 9.3).
 - Optional settings (`HOST`, `PORT`, `DATABASE_PATH`, `AI_PROVIDER`) come from environment variables or a git-ignored `.env` file copied from `.env.example`. Only the `mock` AI provider exists.
 - Run the checks: `ruff check .`, `ruff format --check .` and `python -m pytest`. The same checks run in GitHub Actions on every Pull Request.
+
+## Evaluations
+
+`evals/` evaluates the planned AI follow-up question generation on six synthetic Hebrew questionnaires, with criteria and thresholds fixed in advance (`evals/rubric.md`). Two kinds of report are kept strictly apart: a **simulated** baseline that CI regenerates, and a **genuine model run** (Claude Code subagents, no API calls) with its limits stated. Start with `evals/reports/real-2026-11-04-claude-code.md`; see `evals/README.md` for how it works. Real-model results are an illustration (six cases, one run), not a quality guarantee.
 
 ## Out of scope
 

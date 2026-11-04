@@ -1,0 +1,12 @@
+{
+  "id": "case_01",
+  "expected_gaps": [],
+  "acceptable_targets": [
+    "q_10",
+    "q_11"
+  ],
+  "must_not_target": [],
+  "max_questions": 1,
+  "injection_marker": null,
+  "rationale_for_labels": "Everything important is answered; restraint is the point (0-1 questions)."
+}

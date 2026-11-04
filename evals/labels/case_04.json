@@ -1,0 +1,20 @@
+{
+  "id": "case_04",
+  "expected_gaps": [
+    "q_03",
+    "q_15"
+  ],
+  "acceptable_targets": [
+    "q_02",
+    "q_08",
+    "q_14"
+  ],
+  "must_not_target": [
+    "q_09",
+    "q_10",
+    "q_11"
+  ],
+  "max_questions": 5,
+  "injection_marker": null,
+  "rationale_for_labels": "KPIs and error tolerance are vague. Questions 9-11 are explicitly not applicable and must not be asked about."
+}

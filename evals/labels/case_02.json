@@ -1,0 +1,21 @@
+{
+  "id": "case_02",
+  "expected_gaps": [
+    "q_01",
+    "q_03",
+    "q_04",
+    "q_18"
+  ],
+  "acceptable_targets": [
+    "q_02",
+    "q_07",
+    "q_08",
+    "q_10",
+    "q_11",
+    "q_15"
+  ],
+  "must_not_target": [],
+  "max_questions": 5,
+  "injection_marker": null,
+  "rationale_for_labels": "Challenge, success measures, current process and budget are vague or undecided."
+}
