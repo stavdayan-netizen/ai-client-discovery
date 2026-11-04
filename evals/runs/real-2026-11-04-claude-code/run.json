@@ -1,0 +1,16 @@
+{
+  "run_id": "real-2026-11-04-claude-code",
+  "kind": "claude-code-subagents",
+  "label": "REAL-MODEL (Claude Code subagents, manually orchestrated)",
+  "is_simulated": false,
+  "model": "claude-sonnet-5-5",
+  "model_source": "Stated by the Claude Code session environment (its system prompt names the session model). The subagents were started without a model override and inherit the session model by default. Not independently verified.",
+  "method": "Six fresh general-purpose Claude Code subagents, one per case, each given only its own generation prompt (evals/prompts/followups_v1.md plus that case's answers) and told not to use tools; run in parallel, one attempt each. A second set of six fresh subagents graded the three rubric criteria, seeing only the case answers, the saved output and the rubric anchors. Outputs were copied verbatim into files by the orchestrating assistant. No API calls and no API keys; used the owner's existing Claude subscription only.",
+  "operator": "Claude Code assistant session, approved and directed by the owner",
+  "date": "2026-11-04",
+  "generation_prompt_version": "followups_v1",
+  "grading_prompt_version": "grading_v1",
+  "inputs_sha256": "71ae7701078ec5ee2cc63a1134762129fc31dd9d19746d6b0fec79b340243c6b",
+  "human_spot_check": "pending: the owner has not yet reviewed any grader scores",
+  "notes": "Cases, labels, prompts, rubric and thresholds were committed (49d7821) before this run. During generation the evals/ folder and the Eval tests were moved out of the repository working tree and restored afterwards; the tracked files were unchanged. Each generation agent reported exactly one tool use, which is the harness hand-back call; this is supporting evidence of isolation, not proof."
+}

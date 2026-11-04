@@ -186,3 +186,48 @@ def test_grade_parsing_accepts_only_scores_0_1_2():
 def test_every_case_has_an_output_in_the_simulated_run():
     for case_id in case_ids():
         assert (RUNS_DIR / SIMULATED_RUN_ID / "outputs" / f"{case_id}.raw.txt").is_file()
+
+
+# ---- the committed genuine model run ----------------------------------------------------------
+
+REAL_RUN_ID = "real-2026-11-04-claude-code"
+
+
+def test_real_run_is_valid_complete_and_clearly_labelled_real():
+    run = report_module.load_run(REAL_RUN_ID)
+    assert validate_run(run) == []  # provenance present, inputs unchanged since the run
+    assert run["kind"] == KIND_REAL and run["is_simulated"] is False
+    assert run["label"].startswith("REAL-MODEL")
+    assert "not independently verified" in run["model_source"].lower()
+    directory = RUNS_DIR / REAL_RUN_ID
+    for case_id in case_ids():
+        assert (directory / "prompts" / f"{case_id}.md").is_file()
+        assert (directory / "outputs" / f"{case_id}.raw.txt").is_file()
+        assert (directory / "grades" / f"{case_id}.raw.txt").is_file()
+
+
+def test_real_report_states_its_provenance_and_limits_and_records_failures():
+    markdown, as_json = build_report(REAL_RUN_ID)
+    assert markdown.startswith("# Evaluation report: REAL-MODEL")
+    assert "not independently verified" in markdown
+    assert "Human spot-check of the grader's scores by the owner: pending" in markdown
+    assert "no API calls, no API keys" in markdown
+    scored = json.loads(as_json)
+    assert scored["run"]["is_simulated"] is False
+    assert all(c["grades"] for c in scored["cases"])
+    # Results are recorded as measured, whatever they are: every verdict is present.
+    agg = scored["aggregate"]
+    verdicts = [
+        agg["hard_checks"]["verdict"],
+        agg["gap_recall"]["verdict"],
+        agg["precision"]["verdict"],
+    ]
+    verdicts += [g["verdict"] for g in agg["graded"].values()]
+    assert set(verdicts) <= {"PASS", "FAIL"}
+
+
+def test_real_and_simulated_reports_are_not_interchangeable():
+    simulated, _ = build_report(SIMULATED_RUN_ID)
+    real, _ = build_report(REAL_RUN_ID)
+    assert "NOT a model evaluation" in simulated and "NOT a model evaluation" not in real
+    assert "REAL-MODEL EVALUATION" in real and "REAL-MODEL EVALUATION" not in simulated
