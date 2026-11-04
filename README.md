@@ -2,22 +2,32 @@
 
 A small internal tool for an AI implementation consultancy. After an initial fit call, a team member creates a lead and sends a personalized Hebrew (RTL) discovery questionnaire. The lead fills it in (with autosave, draft and resume), answers a few AI-suggested follow-up questions, and submits. The team then reviews the answers, private notes and a draft AI analysis before the next discovery conversation.
 
-This is a learning project for the AiDO Lesson 9 assignment. All data in it is synthetic.
+This is a learning project. All data in it is synthetic.
 
-## The four assignment phases
+## AiDO Lesson 9 - Assignment Overview
 
-| Phase | What it covers | Where |
-|---|---|---|
-| **Design** | What we build and why | `SPEC.md`, `architecture.md` |
-| **Place** | Where components run, limits, secrets, cost assumptions (plan only) | `architecture.md` (section 8) |
-| **Manage** | GitHub repo, Project board, small Issues, a branch and PR per Issue | `practice.md`, GitHub Issues and Project |
-| **Test/Eval** | Automated tests, simulated AI Evals, responsive checks, CI | `tests/`, `evals/`, `.github/workflows/ci.yml` (added in later Issues) |
+**Status (as of 2026-11-04).** Design, placement and project management are in place, and the first slices are built: the localhost-only application skeleton, the database schema, the questionnaire template (the 18 original questions) and a first AI Evaluation. There are no user-facing screens yet. Issues #1 and #2 are done; the Evaluation part of #8 is done (its browser-test part is still open); #3 to #7 and #9 are not started.
 
-## Status
+| Phase | Where to look |
+|---|---|
+| **Design** | [`SPEC.md`](SPEC.md) (what to build and why), [`architecture.md`](architecture.md) (components, data model, flows, decision log D-1 to D-27) |
+| **Place** | [`architecture.md`](architecture.md), section 8 (where each part runs, limits, secrets, cost assumptions) and section 9 (security model and its limits). Planning only: nothing is deployed |
+| **Manage** | [GitHub Project board](https://github.com/users/stavdayan-netizen/projects/1) (To do / In progress / Done); [Issues #1 to #9](https://github.com/stavdayan-netizen/ai-client-discovery/issues); merged Pull Requests [#10](https://github.com/stavdayan-netizen/ai-client-discovery/pull/10) (Issue #1), [#11](https://github.com/stavdayan-netizen/ai-client-discovery/pull/11) (Issue #2), [#12](https://github.com/stavdayan-netizen/ai-client-discovery/pull/12) (Issue #8, Evaluation part); rules in [`practice.md`](practice.md); [Issue template](.github/ISSUE_TEMPLATE/task.md) and [PR template](.github/pull_request_template.md); labels `phase:design`, `phase:place`, `phase:manage`, `phase:test-eval` |
+| **Test/Eval** | Automated tests in [`tests/`](tests); GitHub Actions workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) ([runs](https://github.com/stavdayan-netizen/ai-client-discovery/actions)); real-model Evaluation report [`evals/reports/real-2026-11-04-claude-code.md`](evals/reports/real-2026-11-04-claude-code.md); criteria and thresholds [`evals/rubric.md`](evals/rubric.md); how it works [`evals/README.md`](evals/README.md) |
 
-Early development. The application skeleton, database schema and questionnaire seed exist (Issue #2); the screens come in later Issues. Architecture is approved for the local assignment MVP.
+Every Issue was done on its own branch with its own Pull Request, with owner approval before each merge. The repository and the Project board are public, and all data in them is synthetic.
 
-The development plan is nine GitHub Issues, done one at a time in order, each with its own branch and Pull Request (see `architecture.md`, section 14): documentation and setup; skeleton, database and questionnaire seed; admin dashboard, leads and links; respondent UI; autosave and progress tracking; mock AI follow-ups, submission and analysis; admin results, contacts and notes; automated tests, simulated Evals, responsive checks and CI; editable questionnaire template.
+### Passing tests are not the same as passing the Evaluation
+
+These are two different things, and they have different results:
+
+- **Automated tests: passing.** 166 tests pass locally and in GitHub Actions, together with lint and an offline check that the stored Evaluation reports still match their data. They show that the code behaves as specified (localhost-only guard, database rules, questionnaire seed, Evaluation scoring and report labelling).
+- **Real-model Evaluation: thresholds not all met.** A genuine model (Claude, run through Claude Code subagents, no API calls) generated follow-up questions for six synthetic Hebrew questionnaires, judged against criteria and thresholds fixed in advance. Result: hard checks 52 of 54 (**fail**), gap recall 0.88 (pass), precision 0.70 (pass), and the three graded criteria 1.17, 1.17 and 1.33 out of 2 against a 1.5 threshold (**fail**). The failures are recorded as measured, together with the owner's manual review of two cases and the limitations of the method. Six cases and one run are an illustration, not a quality guarantee.
+- A separate **simulated** baseline (fixed rules, not a model) is labelled as such and says nothing about model quality.
+
+### Important limits
+
+**This application is not deployed and is not ready for real client data.** It runs on localhost only, has no authentication, and holds only fictional demo data. Authentication and role-based access are mandatory before any deployment or use with real client information (see [`architecture.md`](architecture.md), section 9.3).
 
 ## Planned stack
 
@@ -37,20 +47,8 @@ python -m app                    # starts the server on http://127.0.0.1:8000
 
 - `python -m app` is the supported launcher. It listens on localhost only and refuses to start on any other address. The application has **no authentication yet**, so it must never be exposed to a network (see `architecture.md`, sections 9.1 to 9.3).
 - Optional settings (`HOST`, `PORT`, `DATABASE_PATH`, `AI_PROVIDER`) come from environment variables or a git-ignored `.env` file copied from `.env.example`. Only the `mock` AI provider exists.
-- Run the checks: `ruff check .`, `ruff format --check .` and `python -m pytest`. The same checks run in GitHub Actions on every Pull Request.
-
-## Evaluations
-
-`evals/` evaluates the planned AI follow-up question generation on six synthetic Hebrew questionnaires, with criteria and thresholds fixed in advance (`evals/rubric.md`). Two kinds of report are kept strictly apart: a **simulated** baseline that CI regenerates, and a **genuine model run** (Claude Code subagents, no API calls) with its limits stated. Start with `evals/reports/real-2026-11-04-claude-code.md`; see `evals/README.md` for how it works. Real-model results are an illustration (six cases, one run), not a quality guarantee.
-
-## Out of scope
-
-**Deployment is out of scope.** The app is designed to run locally only, bound to localhost, with no admin authentication and synthetic data only. Authentication and role-based access are mandatory before any deployment or use with real client data (see `architecture.md`, section 9.3).
+- Run the checks: `ruff check .`, `ruff format --check .`, `python -m pytest` and `python -m evals.run_evals check`. The same checks run in GitHub Actions on every Pull Request.
 
 ## Working on this project
 
-Read `SPEC.md`, `architecture.md` and `practice.md` first. Work proceeds one Issue, one branch, one Pull Request, with owner approval before merging.
-
-- Issues and the board: GitHub Issues #1 to #9 in the private Project "AI Client Discovery" (To do / In progress / Done).
-- New Issues use `.github/ISSUE_TEMPLATE/task.md`; Pull Requests use `.github/pull_request_template.md`.
-- Phase labels: `phase:design`, `phase:place`, `phase:manage`, `phase:test-eval`.
+Read `SPEC.md`, `architecture.md` and `practice.md` first. The development plan is nine GitHub Issues (see `architecture.md`, section 14), done one at a time, each with its own branch and Pull Request, merged only with owner approval.
