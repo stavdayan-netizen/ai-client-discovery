@@ -2,7 +2,7 @@
 
 Status: **Approved for local assignment MVP** (v0.2). Covers Lesson 9 phases **Design** and **Place**. **No deployment** is planned or performed in this assignment.
 
-Approved decisions in force: Python + FastAPI + SQLite + HTML/CSS/vanilla JS (no Node.js, no React); private GitHub repository; no admin authentication in the local-only MVP (synthetic data only; authentication mandatory before deployment, section 9.3); deterministic mock AI first, real AI and real-model Evals only after explicit approval; auto follow-ups (max 5) after the base questionnaire; one automatic analysis run after final submission, no duplicates, admin retry only on failure; configurable contact groups; date-picker questions; locally bundled open-licensed Hebrew font; all approved product features in scope; automated Tests, simulated Evals and responsive checks inside the assignment milestones.
+Approved decisions in force: Python + FastAPI + SQLite + HTML/CSS/vanilla JS (no Node.js, no React); GitHub repository (created private, public since 2026-11-04); no admin authentication in the local-only MVP (synthetic data only; authentication mandatory before deployment, section 9.3); deterministic mock AI first, real AI and real-model Evals only after explicit approval; auto follow-ups (max 5) after the base questionnaire; one automatic analysis run after final submission, no duplicates, admin retry only on failure; configurable contact groups; date-picker questions; locally bundled open-licensed Hebrew font; all approved product features in scope; automated Tests, simulated Evals and responsive checks inside the assignment milestones.
 
 Related documents: `SPEC.md` (what to build), `practice.md` (how we work). Where this file makes a decision that refines SPEC.md, it is recorded in the Decision Log (section 12).
 
@@ -68,7 +68,7 @@ Key boundaries:
 
 ### 2.1 Repository state and proposed layout
 
-**Current state:** the private GitHub repository `stavdayan-netizen/ai-client-discovery` exists and `main` contains the initial planning commit (`5290bd5`): `SPEC.md`, `practice.md`, `architecture.md`, `CLAUDE.md`, `README.md`, `.gitignore`. The private GitHub Project board (To do / In progress / Done) has been created and linked to the repository. The nine approved Issues (section 14) exist as GitHub Issues #1 to #9 and are tracked in Project #1. No collaborators have been invited. Documentation and management files (`.env.example`, Issue and PR templates) are added by Issue #1; everything else below is **proposed and not yet created**, and each piece is created through its own Issue, branch and Pull Request.
+**Current state:** the GitHub repository `stavdayan-netizen/ai-client-discovery` exists and `main` contains the initial planning commit (`5290bd5`): `SPEC.md`, `practice.md`, `architecture.md`, `CLAUDE.md`, `README.md`, `.gitignore`. The GitHub Project board (To do / In progress / Done) has been created and linked to the repository. Both the repository and the board were created private and have been public since 2026-11-04. The nine approved Issues (section 14) exist as GitHub Issues #1 to #9 and are tracked in Project #1. No collaborators have been invited. Documentation and management files (`.env.example`, Issue and PR templates) are added by Issue #1; everything else below is **proposed and not yet created**, and each piece is created through its own Issue, branch and Pull Request.
 
 Proposed layout (files already present are marked):
 
@@ -481,9 +481,9 @@ Planning only. Nothing here is purchased, provisioned or deployed. Prices are in
 | Item | Assumption | Status |
 |---|---|---|
 | Development tooling (Python, FastAPI, SQLite, Playwright/Chromium, pytest) | Free and open source | Planned: $0 |
-| GitHub private repository, Issues, Projects | Included in the owner's GitHub plan | To verify |
-| GitHub Actions on a private repo | Uses the plan's included free minutes; a test run of this size is expected to be a few minutes | To verify the quota; if exceeded, stop and ask, do not add a paid plan |
-| GitHub branch protection / required checks on a private repo | May be limited on a free plan | To verify; fallback is a documented convention plus visible CI status on every PR |
+| GitHub repository (created private, now public), Issues, Projects | Included in the owner's GitHub plan | To verify |
+| GitHub Actions (written when the repository was private; it is now public) | Uses the plan's included free minutes; a test run of this size is expected to be a few minutes | To verify the quota; if exceeded, stop and ask, do not add a paid plan |
+| GitHub branch protection / required checks | May be limited on a free plan or by repository visibility (written when the repository was private; now public) | To verify; fallback is a documented convention plus visible CI status on every PR |
 | AI during this assignment | $0 (MockProvider only) | Committed |
 | Future real AI | Cost per lead = (follow-up call + analysis call) x tokens x provider price. Rough planning assumption: each call sends the questionnaire answers (a few thousand tokens) and returns well under a few thousand tokens. **These numbers are assumptions, not measurements**; actual figures come from a real eval run | Requires explicit approval and a hard budget cap before any use |
 | Hosting, domain | $0 now; none provisioned | Out of scope |
@@ -553,7 +553,7 @@ Tests use **fixed fictional fixtures** and the MockProvider only. They need no n
 
 ### 10.3 CI
 
-`.github/workflows/ci.yml`: on pull request and push to a feature branch: set up Python, install pinned requirements, install Playwright Chromium, run lint, pytest (including responsive smoke), and the simulated eval checks. No secrets, no paid APIs. Results visible on every PR. Whether "required status check" can be enforced on a private free-plan repo is an open verification item (section 8.4).
+`.github/workflows/ci.yml`: on pull request and push to a feature branch: set up Python, install pinned requirements, install Playwright Chromium, run lint, pytest (including responsive smoke), and the simulated eval checks. No secrets, no paid APIs. Results visible on every PR. Whether "required status check" can be enforced on this repository is an open verification item (section 8.4); the repository was private when this was written and is now public, so availability should be re-checked.
 
 **Mobile verification honesty:** responsive checks run in a desktop browser at emulated widths. They are not a substitute for a physical phone and the PR checklist must say which checks were automated and which were manually inspected.
 
@@ -567,7 +567,7 @@ The requirements in SPEC.md and the owner's decisions all remain in force. This 
 
 - **Design:** this file and SPEC.md, merged through a PR.
 - **Place:** section 8 of this file, merged, plus the working localhost setup with its guards.
-- **Manage:** private repo, Project board, nine Issues with acceptance criteria, one branch and one PR per Issue, PR template, `CLAUDE.md` pointer (Issue 1 and every PR).
+- **Manage:** GitHub repository (public), Project board (public), nine Issues with acceptance criteria, one branch and one PR per Issue, PR template, `CLAUDE.md` pointer (Issue 1 and every PR).
 - **Test/Eval:** tests written with every Issue, CI green on each PR, simulated Evals and automated responsive checks at 4 widths (Issue 8).
 - **Working product path:** create a lead, snapshot the v1 questionnaire, share a link, fill with autosave, resume, continue, get mock follow-ups, final submit, read-only, automatic one-time mock analysis visible to the admin with the "simulated" label, per-answer notes.
 
@@ -611,15 +611,15 @@ The requirements in SPEC.md and the owner's decisions all remain in force. This 
 
 ## 13. Resolved decisions and remaining items
 
-Resolved by the owner: D-10 (retry only after failure), D-12 (configurable contact groups preserving Q5/Q6 fields), D-14 (Heebo bundled locally), private repository, and the full feature scope including the template editor.
+Resolved by the owner: D-10 (retry only after failure), D-12 (configurable contact groups preserving Q5/Q6 fields), D-14 (Heebo bundled locally), GitHub repository (created private, public since 2026-11-04), and the full feature scope including the template editor.
 
 Remaining, none blocking the documentation stage:
-1. Verify GitHub plan limits (private-repo Actions minutes, branch protection / required checks) before relying on them; fallback is documented in 8.4.
-2. Instructor access: a collaborator invite later; nothing is shared or pushed until the setup stage is approved.
+1. Verify GitHub plan limits (Actions minutes, branch protection / required checks; the repository was private when this was written and is now public) before relying on them; fallback is documented in 8.4.
+2. Instructor access: the repository and the Project board have been public since 2026-11-04, so no invitation is needed to view them; no collaborators have been invited.
 3. Real AI provider, model, budget and real-model Evals: deferred until separately and explicitly approved.
 4. ~~Which of the 18 questions are required in template v1~~ **Resolved:** all 18 are required; text questions are free text; date and contact-group questions offer "לא ידוע / טרם הוחלט" (D-23, D-24).
 
-Approved on review: two-device autosave conflict handling (4.2), interrupted AI-run recovery (4.3), and the progress and submission semantics (4.5). GitHub Project #1 (private) exists and is linked to the repository; no Issues have been created.
+Approved on review: two-device autosave conflict handling (4.2), interrupted AI-run recovery (4.3), and the progress and submission semantics (4.5). GitHub Project #1 (now public) exists and is linked to the repository; the nine Issues have since been created.
 
 ---
 
@@ -629,7 +629,7 @@ The work is organized as **exactly nine high-level Issues**, done **one at a tim
 
 **Tests are written with each feature, not postponed.** Every Issue ships its own pytest tests (and a manual four-width responsive check for UI work, as `practice.md` requires). Issue 8 adds the cross-cutting layer: simulated Evals, automated responsive browser checks and the full CI gate, and Issue 9 extends that coverage to the template editor.
 
-**Setup status:** the private repository exists and the planning files are on `main`; the private Project board with To do / In progress / Done columns exists and is linked to the repository. The nine Issues below have been created as GitHub Issues #1 to #9 (same numbers as in this list) and are on the board. No collaborators have been invited.
+**Setup status:** the repository (created private, public since 2026-11-04) exists and the planning files are on `main`; the Project board (now public) with To do / In progress / Done columns exists and is linked to the repository. The nine Issues below have been created as GitHub Issues #1 to #9 (same numbers as in this list) and are on the board. No collaborators have been invited.
 
 **CI timing (approved):** Issue 2 adds a minimal GitHub Actions workflow (lint + pytest on every Pull Request, no secrets), so every later PR is checked from the start. Issue 8 extends it with the simulated Evals and the browser-based responsive tests. The editable template (Issue 9) is built last and brings its own tests; its flows are added to the Issue 8 browser tests.
 
@@ -678,7 +678,7 @@ The work is organized as **exactly nine high-level Issues**, done **one at a tim
 
 ### Issue 8 - Automated tests, simulated Evals, responsive checks and GitHub Actions
 *Status: partly done. Done in the Eval-demonstration PR (`8-evals-followup-demo`): Eval cases, runner, labelled simulated report, one genuine model report (decision D-27), the CI re-scoring step and their tests. Remaining: Playwright responsive smoke tests, the mobile checklist, the test report and the check of what the plan allows for required checks.*
-- **Scope:** Eval cases (synthetic Hebrew questionnaires, including natural-language "לא יודע" / "לא רלוונטי" answers, marked-unknown date and contact groups, and mixed cases), the Eval runner and a labeled simulated report; Playwright responsive smoke tests for the respondent and admin flows at 320, 375, 768 and 1280px; extension of the Issue 2 CI workflow (browser tests, Evals, no secrets, no paid APIs); the mobile acceptance checklist in the PR template; a short test report stating what was automated and what was only inspected manually; check against the SPEC acceptance list (the template-editor criteria, 5 and 21, are completed and added to the report in Issue 9); verification of what the private-repository plan allows for required checks, with the documented fallback if unavailable.
+- **Scope:** Eval cases (synthetic Hebrew questionnaires, including natural-language "לא יודע" / "לא רלוונטי" answers, marked-unknown date and contact groups, and mixed cases), the Eval runner and a labeled simulated report; Playwright responsive smoke tests for the respondent and admin flows at 320, 375, 768 and 1280px; extension of the Issue 2 CI workflow (browser tests, Evals, no secrets, no paid APIs); the mobile acceptance checklist in the PR template; a short test report stating what was automated and what was only inspected manually; check against the SPEC acceptance list (the template-editor criteria, 5 and 21, are completed and added to the report in Issue 9); verification of what the repository plan allows for required checks (the repository was private when this was planned and is now public), with the documented fallback if unavailable.
 - **Done when:** the Eval report header shows `is_simulated: true` and "real-model Evals: not run" and the runner refuses to label a mock run as real; the unknown versus not-applicable checks run; the responsive tests pass in CI and check no horizontal overflow, RTL, key controls and touch-target size at the four widths; CI is green on a PR with no secrets; the test report and checklist are committed.
 - **Test plan:** the Evals and browser tests above are themselves the deliverable; additionally pytest verifies that the report-labeling rule cannot be bypassed. Real-model Evals remain a separate, later step that needs explicit approval of provider and budget.
 - **SPEC acceptance:** 14, 15, 22.
