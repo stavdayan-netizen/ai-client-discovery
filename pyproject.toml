@@ -6,6 +6,10 @@ extend-exclude = [".venv", "*.md"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 
+[tool.ruff.lint.per-file-ignores]
+# Long prose strings that make up the human-readable Eval report.
+"evals/report.py" = ["E501"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]

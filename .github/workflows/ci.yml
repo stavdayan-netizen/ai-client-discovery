@@ -36,3 +36,8 @@ jobs:
 
       - name: Tests
         run: python -m pytest
+
+      # Offline and deterministic: regenerates the simulated baseline and re-scores every stored
+      # run, failing if a committed report no longer matches. No model, no API calls and no keys.
+      - name: Simulated Evals (reproducibility check)
+        run: python -m evals.run_evals check
