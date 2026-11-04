@@ -342,6 +342,24 @@ def render_report(scored: dict, run_id: str) -> str:
             add("")
             add(f"Grader output could not be read: {c['grade_error']}")
 
+    spot = run.get("human_spot_check")
+    if isinstance(spot, dict):
+        add("")
+        add("## Manual spot-check by the owner")
+        add("")
+        add(
+            f"Recorded on {spot['date']} by the {spot['reviewer']}. {spot['scope']} "
+            "The statements below are the reviewer's own, summarised without changes to meaning."
+        )
+        for case_id, statements in spot["cases"].items():
+            add("")
+            add(f"**{case_id}**")
+            add("")
+            for statement in statements:
+                add(f"- {statement}")
+        add("")
+        add(f"**Effect on the results:** {spot['effect']}")
+
     add("")
     add("## Limitations")
     add("")
@@ -377,7 +395,20 @@ def render_report(scored: dict, run_id: str) -> str:
             "- Raw outputs were copied into files by the orchestrating assistant. They were not edited, "
             "and no case was re-run."
         )
-        add(f"- Human spot-check of the grader's scores by the owner: {run['human_spot_check']}.")
+        if isinstance(spot, dict):
+            add(
+                "- Manual spot-check: the owner reviewed two of the six cases (those with hard-check "
+                "failures, chosen because they failed and not at random) and judged the grader's "
+                "scores broadly reasonable there. The other four cases were not reviewed by a human."
+            )
+            add(
+                "- Methodology limitation (H6): the check treats any listing of a not-applicable "
+                "question id as a violation, regardless of what the question actually asks. The owner "
+                "judged this too strict semantically. The recorded failure stands unchanged; a "
+                "refined check would be a new rubric version with a new run."
+            )
+        else:
+            add(f"- Human spot-check of the grader's scores by the owner: {spot}.")
     add(
         "- H7 (no request for secrets) is a pattern-based heuristic, and H8 only checks numbers. "
         "Other kinds of invented information are judged by the grader in genuine runs."

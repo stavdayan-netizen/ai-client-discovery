@@ -899,7 +899,27 @@
     "date": "2026-11-04",
     "generation_prompt_version": "followups_v1",
     "grading_prompt_version": "grading_v1",
-    "human_spot_check": "pending: the owner has not yet reviewed any grader scores",
+    "human_spot_check": {
+      "cases": {
+        "case_01 (complete questionnaire)": [
+          "Agrees that the model generated too many follow-up questions.",
+          "Some questions were useful, but several were marginal or unnecessary given the detailed original answers.",
+          "The one-question limit is reasonable as a strict evaluation criterion for this specific complete case, even though the general product allows up to five questions.",
+          "Considers the grader's scores broadly reasonable."
+        ],
+        "case_04 (not-applicable answers)": [
+          "Question 2 merely references an excluded topic and does not meaningfully target it.",
+          "Question 4 is borderline, but is interpreted primarily as a legitimate question about the proposed solution's scope and future data sources.",
+          "The hard check (H6) is too strict semantically, because it treats every reference to an excluded question id as a violation regardless of the actual meaning. This is noted as a limitation of the evaluation methodology, not as grounds to change the result.",
+          "Considers the grader's qualitative scores broadly reasonable."
+        ]
+      },
+      "date": "2026-11-04",
+      "effect": "None of the recorded results changed. The hard-check failures (H2 on case_01, H6 on case_04), the labels, the thresholds, the model outputs, the grades and every computed score and verdict stand exactly as measured. The review only adds the owner's judgement and the H6 methodology limitation.",
+      "reviewer": "owner",
+      "scope": "Two of the six cases were reviewed: case_01 and case_04, the two cases with hard-check failures (chosen because they failed, not at random). The other four cases were not reviewed by a human.",
+      "status": "completed"
+    },
     "inputs_sha256": "71ae7701078ec5ee2cc63a1134762129fc31dd9d19746d6b0fec79b340243c6b",
     "is_simulated": false,
     "kind": "claude-code-subagents",

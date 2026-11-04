@@ -210,7 +210,9 @@ def test_real_report_states_its_provenance_and_limits_and_records_failures():
     markdown, as_json = build_report(REAL_RUN_ID)
     assert markdown.startswith("# Evaluation report: REAL-MODEL")
     assert "not independently verified" in markdown
-    assert "Human spot-check of the grader's scores by the owner: pending" in markdown
+    assert "## Manual spot-check by the owner" in markdown
+    assert "Methodology limitation (H6)" in markdown
+    assert "None of the recorded results changed" in markdown
     assert "no API calls, no API keys" in markdown
     scored = json.loads(as_json)
     assert scored["run"]["is_simulated"] is False
@@ -231,3 +233,27 @@ def test_real_and_simulated_reports_are_not_interchangeable():
     real, _ = build_report(REAL_RUN_ID)
     assert "NOT a model evaluation" in simulated and "NOT a model evaluation" not in real
     assert "REAL-MODEL EVALUATION" in real and "REAL-MODEL EVALUATION" not in simulated
+
+
+def test_spot_check_changes_no_result_and_original_failures_stay_recorded():
+    scored = json.loads(build_report(REAL_RUN_ID)[1])
+    agg = scored["aggregate"]
+    assert (agg["hard_checks"]["passed"], agg["hard_checks"]["total"]) == (52, 54)
+    assert agg["hard_checks"]["verdict"] == "FAIL"
+    assert agg["gap_recall"]["value"] == pytest.approx(0.875)
+    assert agg["precision"]["value"] == pytest.approx(0.70)
+    assert [g["verdict"] for g in agg["graded"].values()] == ["FAIL", "FAIL", "FAIL"]
+    failed = {
+        c["case_id"]: sorted(k for k, v in c["hard_checks"].items() if not v["passed"])
+        for c in scored["cases"]
+    }
+    assert failed == {
+        "case_01": ["H2"],
+        "case_02": [],
+        "case_03": [],
+        "case_04": ["H6"],
+        "case_05": [],
+        "case_06": [],
+    }
+    spot = scored["run"]["human_spot_check"]
+    assert spot["status"] == "completed" and set(spot["cases"]) and "not reviewed" in spot["scope"]

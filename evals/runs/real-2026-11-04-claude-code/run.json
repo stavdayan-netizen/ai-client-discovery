@@ -11,6 +11,26 @@
   "generation_prompt_version": "followups_v1",
   "grading_prompt_version": "grading_v1",
   "inputs_sha256": "71ae7701078ec5ee2cc63a1134762129fc31dd9d19746d6b0fec79b340243c6b",
-  "human_spot_check": "pending: the owner has not yet reviewed any grader scores",
+  "human_spot_check": {
+    "status": "completed",
+    "date": "2026-11-04",
+    "reviewer": "owner",
+    "scope": "Two of the six cases were reviewed: case_01 and case_04, the two cases with hard-check failures (chosen because they failed, not at random). The other four cases were not reviewed by a human.",
+    "cases": {
+      "case_01 (complete questionnaire)": [
+        "Agrees that the model generated too many follow-up questions.",
+        "Some questions were useful, but several were marginal or unnecessary given the detailed original answers.",
+        "The one-question limit is reasonable as a strict evaluation criterion for this specific complete case, even though the general product allows up to five questions.",
+        "Considers the grader's scores broadly reasonable."
+      ],
+      "case_04 (not-applicable answers)": [
+        "Question 2 merely references an excluded topic and does not meaningfully target it.",
+        "Question 4 is borderline, but is interpreted primarily as a legitimate question about the proposed solution's scope and future data sources.",
+        "The hard check (H6) is too strict semantically, because it treats every reference to an excluded question id as a violation regardless of the actual meaning. This is noted as a limitation of the evaluation methodology, not as grounds to change the result.",
+        "Considers the grader's qualitative scores broadly reasonable."
+      ]
+    },
+    "effect": "None of the recorded results changed. The hard-check failures (H2 on case_01, H6 on case_04), the labels, the thresholds, the model outputs, the grades and every computed score and verdict stand exactly as measured. The review only adds the owner's judgement and the H6 methodology limitation."
+  },
   "notes": "Cases, labels, prompts, rubric and thresholds were committed (49d7821) before this run. During generation the evals/ folder and the Eval tests were moved out of the repository working tree and restored afterwards; the tracked files were unchanged. Each generation agent reported exactly one tool use, which is the harness hand-back call; this is supporting evidence of isolation, not proof."
 }
